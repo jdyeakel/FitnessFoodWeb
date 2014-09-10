@@ -103,6 +103,30 @@ b.beta <- seq(5,1,length.out = num.dec)
 mean.beta <- a.beta/(a.beta + b.beta)
 param.beta <- cbind(a.beta,b.beta)
 
+#Resource similarity ~ cosine similarity index
+res.sim <- matrix(0,num.res,num.res)
+for (i in 1:num.res) {
+  for (j in 1:num.res) {
+    resi.att <- c(1,res.bs[i]) #in multidimensional trait space, this would be a vector of attributes
+    resj.att <- c(1,res.bs[j])
+    res.sim[i,j] <- (resi.att %*% resj.att)/ sqrt((resi.att %*% resi.att) * (resj.att %*% resj.att))
+  }
+}
+#stretch between 0 and 1 for each similarity column
+for (i in 1:num.res) {
+  res.sim.low <- res.sim[,i] - min(res.sim[,i])
+  res.sim[,i] <- res.sim.low/max(res.sim.low)
+}
+
+#Build decision probabilities
+dec.ls <- list()
+for (j in 1:num.res) {
+  dec.beta <- matrix(0,num.res,num.dec)
+  for (i in 1:num.dec) {
+    dec.beta[,i] <- dbeta(res.sim[,i],shape1=param.beta[i,1],shape2=param.beta[i,2])
+  }
+  dec.ls[[j]] <- dec.beta
+}
 
 #Compute fitness matrices
 #node
@@ -126,6 +150,8 @@ for (node in 1:n) {
         
         #Loop over decisions
         for (i in 1:num.dec) {
+          
+          xp <- numeric(max.enc+1)
           
           
           
