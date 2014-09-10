@@ -2,7 +2,7 @@ library(RColorBrewer)
 library(Rcpp)
 library(igraph)
 library(beanplot)
-colors <- brewer.pal(3,"Set1")
+colors <- brewer.pal(10,"Spectral")
 
 num.res <- 5
 res.bs <- round(rgamma(num.res,shape=5,scale=2),0)
@@ -114,20 +114,24 @@ for (i in 1:num.res) {
 }
 #stretch between 0 and 1 for each similarity column
 for (i in 1:num.res) {
-  res.sim.low <- res.sim[,i] - min(res.sim[,i])
+  res.sim.low <- res.sim[,i] - (min(res.sim[,i]))
   res.sim[,i] <- res.sim.low/max(res.sim.low)
 }
+
 
 #Build decision probabilities
 dec.ls <- list()
 for (j in 1:num.res) {
   dec.beta <- matrix(0,num.res,num.dec)
   for (i in 1:num.dec) {
-    dec.beta[,i] <- dbeta(res.sim[,i],shape1=param.beta[i,1],shape2=param.beta[i,2])
+    dec.beta[,i] <- dbeta(res.sim[,j],shape1=param.beta[i,1],shape2=param.beta[i,2])
   }
-  dec.ls[[j]] <- dec.beta
+  #Normalize to sum to 1
+  dec.beta.n <- apply(dec.beta,2,function(x){x/sum(x)})
+  dec.ls[[j]] <- dec.beta.n
 }
-
+plot(dec.ls[[1]][,2],type="l",col=colors[1])
+for (i in 2:10) {lines(dec.ls[[1]][,i],type="l",col=colors[i])}
 #Compute fitness matrices
 #node
 #time
