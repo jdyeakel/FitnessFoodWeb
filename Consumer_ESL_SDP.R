@@ -52,9 +52,20 @@ xi <- matrix(0,n,num.res)
 nu <- matrix(0,n,num.res)
 for (i in 1:n) {
   for (j in 1:num.res) {
-    xi[i,j] <- (1/res.bs[j])*100*num.nn[i]
-    nu[i,j] <- (1/res.bs[j])*100*(nn2.sd[i]+1)
+    xi[i,j] <- (1/res.bs[j])*10*num.nn[i]
+    #nu[i,j] <- (1/res.bs[j])*10*(nn2.sd[i]+2)
+    nu[i,j] <- nn2.sd[i]*2
   }
 }
 
-f_list <- list()
+max.enc <- 20
+f.patch <- vector("list",n)
+f.res.patch <- lapply(f.patch,function(x){matrix(0,(max.enc+1),num.res)})
+for (i in 1:n) {
+  for (j in 1:num.res) {
+    for (k in 1:(max.enc+1)) {
+      f.res.patch[[i]][k,j] <-  dnbinom(k,mu = xi[i,j], size = nu[i,j])
+    }
+    f.res.patch[[i]][,j] <- f.res.patch[[i]][,j] / sum(f.res.patch[[i]][,j])
+  }
+}
