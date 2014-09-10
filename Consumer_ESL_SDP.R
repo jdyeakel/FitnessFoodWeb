@@ -14,6 +14,7 @@ state.matrix <-  matrix(0,cons.bs,tmax)
 
 #Define critical threshold for consumer
 xc <- round((5/8)*cons.bs,0)
+xmax <- cons.bs
 
 #Define terminal fitness function
 #Currently just a increasing function with respect to x... NEED REFINED
@@ -92,9 +93,66 @@ for (i in 1:num.res) {
   g.forage[i] <- eta[i]*res.bs[i]
 }
 
+#Build consumer fitness matrix
+W_x <- matrix(0,cons.bs,tmax)
+istar <-  matrix(0,cons.bs,(tmax-1))
+
+num.dec <- 10
+a.beta <- seq(1,5,length.out = num.dec)
+b.beta <- seq(5,1,length.out = num.dec)
+mean.beta <- a.beta/(a.beta + b.beta)
+param.beta <- cbind(a.beta,b.beta)
 
 
+#Compute fitness matrices
+#node
+#time
+#current resource
+#energetic state
 
+for (node in 1:n) {
+  
+  #Loop over time
+  for (t in seq(tmax-1,1,-1)) {
+    
+    #Loop over 'current resource'
+    for (r in 1:num.res) {
+      
+      #Loop over energetic state
+      for (x in seq(xc,xmax,1)) {
+        
+        value_max <- -10
+        
+        
+        #Loop over decisions
+        for (i in 1:num.dec) {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+        }#end decision loop
+        
+        
+        
+      }#end energetic state loop
+      
+      
+      
+    }#end current resource loop
+    
+    
+    
+    
+    
+  }#end time loop
+  
+  
+}#end node loop
 
 
 
