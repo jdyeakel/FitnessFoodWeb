@@ -46,6 +46,10 @@ for (i in 1:n) {
 #Variability in the local region
 nn2.sd <- unlist(lapply(nn2,sd))
 
+#Plot Graph where the vertex size is scaled to the 'local landscape variability"
+plot(lattice.net,vertex.size=(nn2.sd+1)*3,vertex.label=NA,vertex.color=colors[1],edge.color="lightblue",edge.arrow.size=0.6)
+
+
 #Mean encounter rates of prey in region i should be scaled to the number of nearest neighbors to i
 #Dispersion of prey in region i should be scaled to the variability in nearest neighbors to nearest neighbors in i
 xi <- matrix(0,n,num.res)
@@ -69,3 +73,13 @@ for (i in 1:n) {
     f.res.patch[[i]][,j] <- f.res.patch[[i]][,j] / sum(f.res.patch[[i]][,j])
   }
 }
+
+
+
+
+
+
+
+
+
+
