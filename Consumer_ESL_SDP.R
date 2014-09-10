@@ -52,6 +52,7 @@ plot(lattice.net,vertex.size=(nn2.sd+1)*3,vertex.label=NA,vertex.color=colors[1]
 
 #Mean encounter rates of prey in region i should be scaled to the number of nearest neighbors to i
 #Dispersion of prey in region i should be scaled to the variability in nearest neighbors to nearest neighbors in i
+#This is essentially the "Local Heterogeneity"
 xi <- matrix(0,n,num.res)
 nu <- matrix(0,n,num.res)
 for (i in 1:n) {
@@ -74,7 +75,10 @@ for (i in 1:n) {
   }
 }
 
-
+#Consumer-resource mortality rates
+Ratio.RC <- res.bs/cons.bs
+mp1 <- 0.2
+mort <- 0.5 - 0.5*(1 - 2*mp1)^(Ratio.RC^2)
 
 
 
