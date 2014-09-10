@@ -80,6 +80,23 @@ Ratio.RC <- res.bs/cons.bs
 mp1 <- 0.2
 mort <- 0.5 - 0.5*(1 - 2*mp1)^(Ratio.RC^2)
 
+#Foraging Gains and Costs (allometric and stoichiometric)
+c.forage <- cons.bs^(1/4)
+c.rep <- 0.05*cons.bs
+eta <- numeric(num.res)
+g.forage <- numeric(num.res)
+for (i in 1:num.res) {
+  #Foraging costs/gains conditional on consumer AND resource
+  eta[i] <- 0.1
+  #Gains/costs scale allometrically
+  g.forage[i] <- eta[i]*res.bs[i]
+}
+
+
+
+
+
+
 
 
 
