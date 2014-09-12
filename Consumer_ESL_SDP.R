@@ -106,6 +106,8 @@ mean.beta <- a.beta/(a.beta + b.beta)
 param.beta <- cbind(a.beta,b.beta)
 
 #Resource similarity ~ cosine similarity index
+#0 = entirely dissimilar
+#1 = entirely similar
 res.sim <- matrix(0,num.res,num.res)
 for (i in 1:num.res) {
   for (j in 1:num.res) {
@@ -125,6 +127,7 @@ for (i in 1:num.res) {
 #For every 'current' resource, what is the preference probability based on each decision beta dist?
 
 dec.ls <- list()
+#Across the focal resources
 for (j in 1:num.res) {
   dec.beta <- matrix(0,num.res,num.dec)
   #Across the different decision beta distributions...
@@ -136,8 +139,9 @@ for (j in 1:num.res) {
   dec.beta.n <- apply(dec.beta,2,function(x){x/sum(x)})
   dec.ls[[j]] <- dec.beta.n
 }
-plot(dec.ls[[1]][,2],type="l",col=colors[1])
+plot(dec.ls[[1]][,1],type="l",col=colors[1], ylim=c(0,1))
 for (i in 2:10) {lines(dec.ls[[1]][,i],type="l",col=colors[i])}
+
 #Compute fitness matrices
 #node
 #time
