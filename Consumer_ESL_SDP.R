@@ -63,6 +63,7 @@ for (i in 1:n) {
     nu[i,j] <- nn2.sd[i]*2
   }
 }
+nu <- nu + 1 #Ensure that there are non-zero nu's
 
 max.enc <- 20
 f.patch <- vector("list",n)
@@ -94,9 +95,10 @@ for (i in 1:num.res) {
 }
 
 #Build consumer fitness matrix
-W_x <- matrix(0,cons.bs,tmax)
+W.xt <- matrix(0,cons.bs,tmax)
 istar <-  matrix(0,cons.bs,(tmax-1))
 
+#
 num.dec <- 10
 a.beta <- seq(1,5,length.out = num.dec)
 b.beta <- seq(5,1,length.out = num.dec)
