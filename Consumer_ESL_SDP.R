@@ -98,7 +98,7 @@ for (i in 1:num.res) {
 W.xt <- matrix(0,cons.bs,tmax)
 istar <-  matrix(0,cons.bs,(tmax-1))
 
-#
+#Gradiant of decision possibilities based on resource similarities
 num.dec <- 10
 a.beta <- seq(1,5,length.out = num.dec)
 b.beta <- seq(5,1,length.out = num.dec)
@@ -122,13 +122,17 @@ for (i in 1:num.res) {
 
 
 #Build decision probabilities
+#For every 'current' resource, what is the preference probability based on each decision beta dist?
+
 dec.ls <- list()
 for (j in 1:num.res) {
   dec.beta <- matrix(0,num.res,num.dec)
+  #Across the different decision beta distributions...
   for (i in 1:num.dec) {
     dec.beta[,i] <- dbeta(res.sim[,j],shape1=param.beta[i,1],shape2=param.beta[i,2])
   }
   #Normalize to sum to 1
+  #Each column is a prob. set... all choices are possible, but only one is chosen. Must sum to 1
   dec.beta.n <- apply(dec.beta,2,function(x){x/sum(x)})
   dec.ls[[j]] <- dec.beta.n
 }
