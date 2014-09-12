@@ -94,9 +94,7 @@ for (i in 1:num.res) {
   g.forage[i] <- eta[i]*res.bs[i]
 }
 
-#Build consumer fitness matrix
-W.xt <- matrix(0,cons.bs,tmax)
-istar <-  matrix(0,cons.bs,(tmax-1))
+
 
 #Gradiant of decision possibilities based on resource similarities
 num.dec <- 10
@@ -142,6 +140,39 @@ for (j in 1:num.res) {
 plot(dec.ls[[1]][,1],type="l",col=colors[1], ylim=c(0,1))
 for (i in 2:10) {lines(dec.ls[[1]][,i],type="l",col=colors[i])}
 
+#Fitness matrices
+#Build core consumer fitness matrix
+W.xt <- matrix(0,cons.bs,tmax)
+istar.xt <-  matrix(0,cons.bs,(tmax-1))
+#Build nested fitness lists with the core being W.xt
+W.nr <- list()
+istar.nr <- list()
+for (i in 1:n) {
+  W.nr[[i]] <- list()
+  istar.nr[[i]] <- list()
+}
+for (i in 1:n) {
+  for (j in 1:num.res) {
+    W.nr[[i]][[j]] <- W.xt
+    istar.nr[[i]][[j]] <- istar.xt
+  }
+}
+#Build terminal fitness function
+for (i in 1:n) {
+  for (j in 1:num.res) {
+    for (x in xc:xmax) {
+      term.fit <- x/cons.bs
+      W.nr[[i]][[j]][x,tmax] <- term.fit
+    }
+  }
+}
+
+
+
+
+
+
+
 #Compute fitness matrices
 #node
 #time
@@ -150,11 +181,18 @@ for (i in 2:10) {lines(dec.ls[[1]][,i],type="l",col=colors[i])}
 
 for (node in 1:n) {
   
-  #Loop over time
-  for (t in seq(tmax-1,1,-1)) {
+  #Loop over 'focal resource'
+  for (r in 1:num.res) {
     
-    #Loop over 'current resource'
-    for (r in 1:num.res) {
+    
+    #Loop over time
+    for (t in seq(tmax-1,1,-1)) {
+      
+      
+      
+      #Define decision matrix for forcal resource r
+      dec.m <- dec.ls[[r]]
+      
       
       #Loop over energetic state
       for (x in seq(xc,xmax,1)) {
@@ -183,13 +221,11 @@ for (node in 1:n) {
       
       
       
-    }#end current resource loop
+    }#end time loop
     
     
     
-    
-    
-  }#end time loop
+  }#end current resource loop
   
   
 }#end node loop
