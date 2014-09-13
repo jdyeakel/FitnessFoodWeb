@@ -168,11 +168,6 @@ for (i in 1:n) {
 }
 
 
-
-
-
-
-
 #Compute fitness matrices
 #node
 #time
@@ -181,18 +176,19 @@ for (i in 1:n) {
 
 for (node in 1:n) {
   
+  #Define the vector of encounter probs. and dispersions for each resource on node
+  xi.vec <- xi[node,]
+  nu.vec <- nu[node,]
+  
+  
   #Loop over 'focal resource'
   for (r in 1:num.res) {
     
+    #Define decision matrix for forcal resource r
+    dec.m <- dec.ls[[r]]
     
     #Loop over time
     for (t in seq(tmax-1,1,-1)) {
-      
-      
-      
-      #Define decision matrix for forcal resource r
-      dec.m <- dec.ls[[r]]
-      
       
       #Loop over energetic state
       for (x in seq(xc,xmax,1)) {
@@ -202,6 +198,10 @@ for (node in 1:n) {
         
         #Loop over decisions
         for (i in 1:num.dec) {
+          
+          #Define vector of preference probabilities across resources corresp. to given decision possibility
+          pref.vec <- dec.m[,i]
+          
           
           xp <- numeric(max.enc+1)
           
