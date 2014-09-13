@@ -77,6 +77,9 @@ for (i in 1:n) {
   }
 }
 
+encounters <- seq(0,max.enc,1)
+rho.vec <- 1 - exp(-encounters^2/max(encounters))
+
 #Consumer-resource mortality rates
 Ratio.RC <- res.bs/cons.bs
 mp1 <- 0.2
@@ -176,10 +179,8 @@ for (i in 1:n) {
 
 for (node in 1:n) {
   
-  #Define the vector of encounter probs. and dispersions for each resource on node
-  xi.vec <- xi[node,]
-  nu.vec <- nu[node,]
-  
+  #Define the encounter prob. matrix (k by res)
+  f.m <- f.res.patch[[node]]
   
   #Loop over 'focal resource'
   for (r in 1:num.res) {
@@ -202,8 +203,16 @@ for (node in 1:n) {
           #Define vector of preference probabilities across resources corresp. to given decision possibility
           pref.vec <- dec.m[,i]
           
+          #Loop across resources
           
+          
+          #Define vector for storing pot. changes in x across K encounters
           xp <- numeric(max.enc+1)
+          
+          
+          xp <- 
+          
+          xp <- 
           
           
           
