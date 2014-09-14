@@ -91,7 +91,6 @@ mp1 <- 0.2
 mort <- 0.5 - 0.5*(1 - 2*mp1)^(Ratio.RC^2)
 
 #Foraging Gains and Costs (allometric and stoichiometric)
-c.forage <- cons.bs^(1/4)
 c.rep <- 0.05*cons.bs
 eta <- numeric(num.res)
 g.forage <- numeric(num.res)
@@ -101,6 +100,8 @@ for (i in 1:num.res) {
   #Gains/costs scale allometrically
   g.forage[i] <- eta[i]*res.bs[i]
 }
+#c.forage <- 0.5*cons.bs^(1/4)
+c.forage <- 0.8*min(g.forage)
 
 
 
@@ -183,6 +184,7 @@ for (i in 1:n) {
 #energetic state
 
 for (node in 1:n) {
+  print(paste("Node:",node,sep=""))
   
   #Define the encounter prob. matrix (k by res)
   f.m <- f.res.patch[[node]]
@@ -211,7 +213,7 @@ for (node in 1:n) {
           #Loop across resources
           xp <- numeric(num.res)
           for (rr in 1:num.res) {
-            delta.x <- x + rho.vec*(g.forage[rr] - c.forage) - (1-rho.vec)*c.forage
+            delta.x <- x + (rho.vec*encounters)*(g.forage[rr] - c.forage) - (1-rho.vec)*c.forage
             xp[rr] <- f.m[,rr] %*% delta.x
             #We must establish boundary conditions
             # xc <= xp <= xmax
@@ -220,9 +222,24 @@ for (node in 1:n) {
           }
           
           #Interpolation function
-          xp.low <- round(xp,0)
-          xp.high <- xp.low + 1
-          q <- xp.high - xp
+          xp.low <- numeric(num.res); xp.high <- numeric(num.res); q <- numeric(num.res)
+          for (j in 1:num.res) {
+            if ((xp[j] != xmax) && (xp[j] != xc)) {
+            xp.low[j] <- as.integer(xp[j])
+            xp.high[j] <- xp.low[j] + 1
+            q[j] <- xp.high[j] - xp[j]
+            }
+            if (xp[j] == xc) {
+              xp.low[j] <- xc
+              xp.high[j] <- xc+1
+              q[j] <- 1
+            }
+            if (xp[j] == xmax) {
+              xp.low[j] <- xmax-1
+              xp.high[j] <- xmax
+              q[j] <- 0
+            }
+          }
           #q*xp.low + (1-q)*xp.high ;; if q is 1, all weight on xp.low; vice versa
           
           #W is now grabbed from the ascribed fitness value at time t+1 & interpolated
@@ -237,6 +254,12 @@ for (node in 1:n) {
         #Record the fitness-maximizing decision
         istar.nr[[node]][[r]][x,t] <- which(value == max(value))
         
+        if (length(which(value==max(value))) > 1) {
+          print(paste(">1 at node=",node,"r=",r,"x=",x,"t=",t,sep=""))
+        }
+        
+        #Record the maximum fitness in the fitness matrix
+        W.nr[[node]][[r]][x,t] <- max(value)
         
       }#end energetic state loop
       
