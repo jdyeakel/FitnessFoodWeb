@@ -16,6 +16,11 @@ state.matrix <-  matrix(0,cons.bs,tmax)
 xc <- round((5/8)*cons.bs,0)
 xmax <- cons.bs
 
+rep.gain <- numeric(xmax)
+for (i in xc:xmax) {
+  rep.gain[i] <- i/(10*cons.bs)
+}
+
 #Define terminal fitness function
 #Currently just a increasing function with respect to x... NEED REFINED
 for (i in xc:cons.bs) {
@@ -194,8 +199,8 @@ for (node in 1:n) {
       #Loop over energetic state
       for (x in seq(xc,xmax,1)) {
         
-        value_max <- -10
-        
+        value.max <- -10
+        value <- numeric(num.dec)
         
         #Loop over decisions
         for (i in 1:num.dec) {
@@ -204,26 +209,33 @@ for (node in 1:n) {
           pref.vec <- dec.m[,i]
           
           #Loop across resources
+          xp <- numeric(num.res)
+          for (rr in 1:num.res) {
+            delta.x <- x + rho.vec*(g.forage[rr] - c.forage) - (1-rho.vec)*c.forage
+            xp[rr] <- f.m[,rr] %*% delta.x
+            #We must establish boundary conditions
+            # xc <= xp <= xmax
+            if (xp[rr] < xc) {xp[rr] <- xc}
+            if (xp[rr] > xmax) {xp[rr] <- xmax}
+          }
           
+          #Interpolation function
+          xp.low <- round(xp,0)
+          xp.high <- xp.low + 1
+          q <- xp.high - xp
+          #q*xp.low + (1-q)*xp.high ;; if q is 1, all weight on xp.low; vice versa
           
-          #Define vector for storing pot. changes in x across K encounters
-          xp <- numeric(max.enc+1)
+          #W is now grabbed from the ascribed fitness value at time t+1 & interpolated
+          W <- q*W.nr[[node]][[r]][xp.low,t+1] + (1-q)*W.nr[[node]][[r]][xp.high,t+1]
           
+          Fx <- as.numeric(pref.vec %*% (rep.gain[x] + (1-mort)*W))
           
-          xp <- 
-          
-          xp <- 
-          
-          
-          
-          
-          
-          
-          
-          
+          value[i] <- Fx
           
         }#end decision loop
         
+        #Record the fitness-maximizing decision
+        istar.nr[[node]][[r]][x,t] <- which(value == max(value))
         
         
       }#end energetic state loop
