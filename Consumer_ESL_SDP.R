@@ -4,8 +4,9 @@ library(igraph)
 library(beanplot)
 colors <- brewer.pal(10,"Spectral")
 
-num.res <- 5
+num.res <- 10
 res.bs <- round(rgamma(num.res,shape=5,scale=2),0)
+res.bs <- seq(1,num.res,1)
 cons.bs <- max(res.bs + 5)
 
 #Define state matrices for consumer
@@ -13,7 +14,7 @@ tmax <- 10
 state.matrix <-  matrix(0,cons.bs,tmax)
 
 #Define critical threshold for consumer
-xc <- round((5/8)*cons.bs,0)
+xc <- round((1/4)*cons.bs,0)
 xmax <- cons.bs
 
 rep.gain <- numeric(xmax)
@@ -106,7 +107,7 @@ c.forage <- 0.8*min(g.forage)
 
 
 #Gradiant of decision possibilities based on resource similarities
-num.dec <- 10
+num.dec <- 20
 a.beta <- seq(1,5,length.out = num.dec)
 b.beta <- seq(5,1,length.out = num.dec)
 mean.beta <- a.beta/(a.beta + b.beta)
@@ -123,11 +124,15 @@ for (i in 1:num.res) {
     res.sim[i,j] <- (resi.att %*% resj.att)/ sqrt((resi.att %*% resi.att) * (resj.att %*% resj.att))
   }
 }
-#stretch between 0 and 1 for each similarity column
-for (i in 1:num.res) {
-  res.sim.low <- res.sim[,i] - (min(res.sim[,i]))
-  res.sim[,i] <- res.sim.low/max(res.sim.low)
-}
+#Right now, having trouble with res.sim = 1. It is generally extremely low for all beta dist. other than
+#beta (5,1) ~ the last. Rather, the prob(1) should increase as mean beta increases. 
+#res.sim <- res.sim - 0.1
+
+# #stretch between 0 and 1 for each similarity column
+# for (i in 1:num.res) {
+#   res.sim.low <- res.sim[,i] - (min(res.sim[,i]))
+#   res.sim[,i] <- res.sim.low/max(res.sim.low)
+# }
 
 
 #Build decision probabilities
@@ -213,7 +218,7 @@ for (node in 1:n) {
           #Loop across resources
           xp <- numeric(num.res)
           for (rr in 1:num.res) {
-            delta.x <- x + (rho.vec*encounters)*(g.forage[rr] - c.forage) - (1-rho.vec)*c.forage
+            delta.x <- x + rho.vec*(g.forage[rr] - c.forage) - (1-rho.vec)*c.forage
             xp[rr] <- f.m[,rr] %*% delta.x
             #We must establish boundary conditions
             # xc <= xp <= xmax
@@ -264,9 +269,7 @@ for (node in 1:n) {
       }#end energetic state loop
       
       
-      
     }#end time loop
-    
     
     
   }#end current resource loop
@@ -274,8 +277,11 @@ for (node in 1:n) {
   
 }#end node loop
 
-
-
+#Time-invariant analysis
+istar.node <- list()
+for (node in 1:n) {
+  istar.node[[node]] <- do.call(cbind,lapply(istar.nr[[node]],function(x){x[,1]}))
+}
 
 
 
