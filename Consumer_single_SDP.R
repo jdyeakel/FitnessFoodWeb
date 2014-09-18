@@ -10,8 +10,8 @@ colors <- brewer.pal(10,"Spectral")
 
 num.res <- 10
 res.bs <- round(rgamma(num.res,shape=5,scale=2),0)
-res.bs <- seq(1,num.res,1)
-cons.bs <- max(res.bs + 5)
+res.bs <- seq(1,num.res,length.out=num.res)
+cons.bs <- 10
 
 #Define state matrices for consumer
 tmax <- 10
@@ -258,8 +258,8 @@ op <- par(mfrow = c(1,1),
           mar = c(0,3,1,1) + 0.1,
           mgp = c(2, 1, 0))
 
-filled_contour(seq(1, 15, length.out = nrow(istar.node)), 
-               seq(1, 10,length.out = ncol(istar.node)), 
+filled_contour(seq(1, xmax, length.out = nrow(istar.node)), 
+               seq(1, num.res,length.out = ncol(istar.node)), 
                istar.node,
                levels = seq(1, max(istar.node)),col = col,
                lwd = 0.1,xlab="Energetic Reserves",ylab="Resource Size")
