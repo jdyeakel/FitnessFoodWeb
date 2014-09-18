@@ -1,3 +1,5 @@
+rm(list=c(ls()))
+
 library(RColorBrewer)
 library(Rcpp)
 library(igraph)
@@ -33,7 +35,7 @@ for (i in xc:cons.bs) {
 
 #Set Habitat Heterogeneity
 #seq(0,1):: 0 is an even landscape, 1 is an open landscape
-hab.het <- 0
+hab.het <- 1
 max.nu <- 5
 min.nu <- 1
 
@@ -127,8 +129,8 @@ for (j in 1:num.res) {
   dec.beta.n <- apply(dec.beta,2,function(x){x/sum(x)})
   dec.ls[[j]] <- dec.beta.n
 }
-plot(dec.ls[[1]][,1],type="l",col=colors[1], ylim=c(0,1))
-for (i in 2:10) {lines(dec.ls[[1]][,i],type="l",col=colors[i])}
+plot(dec.ls[[1]][,1],type="l",col=colors[1], ylim=c(0,0.25),lwd=3)
+for (i in 2:10) {lines(dec.ls[[1]][,i],type="l",col=colors[i],lwd=3)}
 
 #Fitness matrices
 #Build core consumer fitness matrix
@@ -159,6 +161,7 @@ for (i in 1:num.res) {
 #time
 #current resource
 #energetic state
+
 #Define the encounter prob. matrix (k by res)
 f.m <- f.res.patch
 
@@ -243,30 +246,22 @@ for (r in 1:num.res) {
 }#end current resource loop
 
 #Time-invariant analysis
-istar.node <- list()
-for (node in 1:n) {
-  istar.node[[node]] <- do.call(cbind,lapply(istar.nr[[node]],function(x){x[,1]}))
-}
+
+istar.node <- do.call(cbind,lapply(istar.nr,function(x){x[,1]}))
 
 col <- RColorBrewer::brewer.pal(9, "YlOrRd")
 source("src/smooth_pal.R")
 col <- smooth_pal(col, 5)
 
-op <- par(mfrow = c(1,2),
+op <- par(mfrow = c(1,1),
           oma = c(5,4,0,0) + 0.1,
           mar = c(0,3,1,1) + 0.1,
           mgp = c(2, 1, 0))
-tic <- 1
-filled_contour(seq(1, 15, length.out = nrow(istar.node[[tic]])), 
-               seq(1, 10,length.out = ncol(istar.node[[tic]])), 
-               istar.node[[tic]],
-               levels = seq(1, max(istar.node[[tic]])),col = col,
-               lwd = 0.1,xlab="Energetic Reserves",ylab="Resource Size")
-tic <- 2
-filled_contour(seq(1, 15, length.out = nrow(istar.node[[tic]])), 
-               seq(1, 10,length.out = ncol(istar.node[[tic]])), 
-               istar.node[[tic]],
-               levels = seq(1, max(istar.node[[tic]])),col = col,
+
+filled_contour(seq(1, 15, length.out = nrow(istar.node)), 
+               seq(1, 10,length.out = ncol(istar.node)), 
+               istar.node,
+               levels = seq(1, max(istar.node)),col = col,
                lwd = 0.1,xlab="Energetic Reserves",ylab="Resource Size")
 par(op)
 
