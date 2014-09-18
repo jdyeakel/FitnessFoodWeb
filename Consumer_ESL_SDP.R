@@ -2,6 +2,8 @@ library(RColorBrewer)
 library(Rcpp)
 library(igraph)
 library(beanplot)
+library(lattice)
+source("src/filled_contour.r")
 colors <- brewer.pal(10,"Spectral")
 
 num.res <- 10
@@ -283,8 +285,23 @@ for (node in 1:n) {
   istar.node[[node]] <- do.call(cbind,lapply(istar.nr[[node]],function(x){x[,1]}))
 }
 
+col <- RColorBrewer::brewer.pal(9, "YlOrRd")
+source("src/smooth_pal.R")
+col <- smooth_pal(col, 5)
 
+op <- par(mfrow = c(1,2),
+          oma = c(5,4,0,0) + 0.1,
+          mar = c(0,3,1,1) + 0.1,
+          mgp = c(2, 1, 0))
+filled_contour(seq(1, 15, length.out = nrow(istar.node[[1]])), 
+               seq(1, 10,length.out = ncol(istar.node[[1]])), 
+               istar.node[[1]],
+               levels = seq(1, max(istar.node[[1]])),col = col,xlab="Energetic Reserves",ylab="Resource Size")
+filled_contour(seq(1, 15, length.out = nrow(istar.node[[2]])), 
+               seq(1, 10,length.out = ncol(istar.node[[2]])), 
+               istar.node[[2]],
+               levels = seq(1, max(istar.node[[2]])),col = col,xlab="Energetic Reserves",ylab="Resource Size")
 
-
+par(op)
 
 
