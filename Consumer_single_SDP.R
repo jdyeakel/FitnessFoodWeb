@@ -30,60 +30,34 @@ for (i in xc:cons.bs) {
     state.matrix[i,tmax] <- i/cons.bs
 }
 
-#Define Spatial landscape & attributes
-#Nunmber of spatial patches
-n <- 25
-lattice.net <- graph.lattice(dimvector=c(sqrt(n),sqrt(n)),directed=FALSE,mutual=TRUE)
-adj.m <- get.adjacency(lattice.net)
-plot(lattice.net,vertex.size=degree(lattice.net),vertex.color=colors[1],edge.color="lightblue",edge.arrow.size=0.6)
 
-#Find the nearest neighbors of each node
-nn <- list()
-for (j in 1:n) {
-  arow <- adj.m[j,]
-  nn[[j]] <- which(arow==1)
-}
-num.nn <- unlist(lapply(nn,length))
-num.nn2 <- num.nn
+#Set Habitat Heterogeneity
+#seq(0,1):: 0 is an even landscape, 1 is an open landscape
+hab.het <- 0
+max.nu <- 5
+min.nu <- 1
 
-#How many nearest neighbors does each nearest neighbor have? (minus the node of interest)
-nn2 <- list()
-for (i in 1:n) {
-  nn2[[i]] <- unlist(lapply(nn[c(nn[[i]])],function(x){length(x)}))
-}
-
-#Variability in the local region
-nn2.sd <- unlist(lapply(nn2,sd))
-
-#Plot Graph where the vertex size is scaled to the 'local landscape variability"
-plot(lattice.net,vertex.size=(nn2.sd+1)*3,vertex.label=NA,vertex.color=colors[1],edge.color="lightblue",edge.arrow.size=0.6)
-
-
-#Mean encounter rates of prey in region i should be scaled to the number of nearest neighbors to i
+#Mean encounter rates of prey in region i should be scaled to body size of resource
 #Dispersion of prey in region i should be scaled to the variability in nearest neighbors to nearest neighbors in i
 #This is essentially the "Local Heterogeneity"
-xi <- matrix(0,n,num.res)
-nu <- matrix(0,n,num.res)
-for (i in 1:n) {
-  for (j in 1:num.res) {
-    xi[i,j] <- (1/res.bs[j])*10*num.nn[i]
-    #nu[i,j] <- (1/res.bs[j])*10*(nn2.sd[i]+2)
-    nu[i,j] <- nn2.sd[i]*2
-  }
+xi <- numeric(num.res)
+nu <- numeric(num.res)
+for (j in 1:num.res) {
+  xi[j] <- (1/res.bs[j])*10
+  #nu[i,j] <- (1/res.bs[j])*10*(nn2.sd[i]+2)
+  nu[j] <- max.nu - (hab.het*(max.nu-min.nu))
 }
-nu <- nu + 1 #Ensure that there are non-zero nu's
+#nu <- nu + 1 #Ensure that there are non-zero nu's
 
 max.enc <- 20
-f.patch <- vector("list",n)
-f.res.patch <- lapply(f.patch,function(x){matrix(0,(max.enc+1),num.res)})
-for (i in 1:n) {
-  for (j in 1:num.res) {
-    for (k in 1:(max.enc+1)) {
-      f.res.patch[[i]][k,j] <-  dnbinom(k,mu = xi[i,j], size = nu[i,j])
-    }
-    f.res.patch[[i]][,j] <- f.res.patch[[i]][,j] / sum(f.res.patch[[i]][,j])
+f.res.patch <- matrix(0,(max.enc+1),num.res)
+for (j in 1:num.res) {
+  for (k in 1:(max.enc+1)) {
+    f.res.patch[k,j] <-  dnbinom(k,mu = xi[j], size = nu[j])
   }
+  f.res.patch[,j] <- f.res.patch[,j] / sum(f.res.patch[,j])
 }
+
 
 encounters <- seq(0,max.enc,1)
 rho.vec <- 1 - exp(-encounters^2/max(encounters))
@@ -163,121 +137,110 @@ istar.xt <-  matrix(0,cons.bs,(tmax-1))
 #Build nested fitness lists with the core being W.xt
 W.nr <- list()
 istar.nr <- list()
-for (i in 1:n) {
+for (i in 1:num.res) {
   W.nr[[i]] <- list()
   istar.nr[[i]] <- list()
 }
-for (i in 1:n) {
-  for (j in 1:num.res) {
-    W.nr[[i]][[j]] <- W.xt
-    istar.nr[[i]][[j]] <- istar.xt
-  }
+for (i in 1:num.res) {
+  W.nr[[i]] <- W.xt
+  istar.nr[[i]] <- istar.xt
 }
 #Build terminal fitness function
-for (i in 1:n) {
-  for (j in 1:num.res) {
-    for (x in xc:xmax) {
-      term.fit <- x/cons.bs
-      W.nr[[i]][[j]][x,tmax] <- term.fit
-    }
+for (i in 1:num.res) {
+  for (x in xc:xmax) {
+    term.fit <- x/cons.bs
+    W.nr[[i]][x,tmax] <- term.fit
   }
 }
+
 
 
 #Compute fitness matrices
-#node
 #time
 #current resource
 #energetic state
+#Define the encounter prob. matrix (k by res)
+f.m <- f.res.patch
 
-for (node in 1:n) {
-  print(paste("Node:",node,sep=""))
+#Loop over 'focal resource'
+for (r in 1:num.res) {
   
-  #Define the encounter prob. matrix (k by res)
-  f.m <- f.res.patch[[node]]
+  #Define decision matrix for forcal resource r
+  dec.m <- dec.ls[[r]]
   
-  #Loop over 'focal resource'
-  for (r in 1:num.res) {
+  #Loop over time
+  for (t in seq(tmax-1,1,-1)) {
     
-    #Define decision matrix for forcal resource r
-    dec.m <- dec.ls[[r]]
-    
-    #Loop over time
-    for (t in seq(tmax-1,1,-1)) {
+    #Loop over energetic state
+    for (x in seq(xc,xmax,1)) {
       
-      #Loop over energetic state
-      for (x in seq(xc,xmax,1)) {
+      value.max <- -10
+      value <- numeric(num.dec)
+      
+      #Loop over decisions
+      for (i in 1:num.dec) {
         
-        value.max <- -10
-        value <- numeric(num.dec)
+        #Define vector of preference probabilities across resources corresp. to given decision possibility
+        pref.vec <- dec.m[,i]
         
-        #Loop over decisions
-        for (i in 1:num.dec) {
-          
-          #Define vector of preference probabilities across resources corresp. to given decision possibility
-          pref.vec <- dec.m[,i]
-          
-          #Loop across resources
-          xp <- numeric(num.res)
-          for (rr in 1:num.res) {
-            delta.x <- x + rho.vec*(g.forage[rr] - c.forage) - (1-rho.vec)*c.forage
-            xp[rr] <- f.m[,rr] %*% delta.x
-            #We must establish boundary conditions
-            # xc <= xp <= xmax
-            if (xp[rr] < xc) {xp[rr] <- xc}
-            if (xp[rr] > xmax) {xp[rr] <- xmax}
-          }
-          
-          #Interpolation function
-          xp.low <- numeric(num.res); xp.high <- numeric(num.res); q <- numeric(num.res)
-          for (j in 1:num.res) {
-            if ((xp[j] != xmax) && (xp[j] != xc)) {
+        #Loop across resources
+        xp <- numeric(num.res)
+        for (rr in 1:num.res) {
+          delta.x <- x + rho.vec*(g.forage[rr] - c.forage) - (1-rho.vec)*c.forage
+          xp[rr] <- f.m[,rr] %*% delta.x
+          #We must establish boundary conditions
+          # xc <= xp <= xmax
+          if (xp[rr] < xc) {xp[rr] <- xc}
+          if (xp[rr] > xmax) {xp[rr] <- xmax}
+        }
+        
+        #Interpolation function
+        xp.low <- numeric(num.res); xp.high <- numeric(num.res); q <- numeric(num.res)
+        for (j in 1:num.res) {
+          if ((xp[j] != xmax) && (xp[j] != xc)) {
             xp.low[j] <- as.integer(xp[j])
             xp.high[j] <- xp.low[j] + 1
             q[j] <- xp.high[j] - xp[j]
-            }
-            if (xp[j] == xc) {
-              xp.low[j] <- xc
-              xp.high[j] <- xc+1
-              q[j] <- 1
-            }
-            if (xp[j] == xmax) {
-              xp.low[j] <- xmax-1
-              xp.high[j] <- xmax
-              q[j] <- 0
-            }
           }
-          #q*xp.low + (1-q)*xp.high ;; if q is 1, all weight on xp.low; vice versa
-          
-          #W is now grabbed from the ascribed fitness value at time t+1 & interpolated
-          W <- q*W.nr[[node]][[r]][xp.low,t+1] + (1-q)*W.nr[[node]][[r]][xp.high,t+1]
-          
-          Fx <- as.numeric(pref.vec %*% (rep.gain[x] + (1-mort)*W))
-          
-          value[i] <- Fx
-          
-        }#end decision loop
-        
-        #Record the fitness-maximizing decision
-        istar.nr[[node]][[r]][x,t] <- which(value == max(value))
-        
-        if (length(which(value==max(value))) > 1) {
-          print(paste(">1 at node=",node,"r=",r,"x=",x,"t=",t,sep=""))
+          if (xp[j] == xc) {
+            xp.low[j] <- xc
+            xp.high[j] <- xc+1
+            q[j] <- 1
+          }
+          if (xp[j] == xmax) {
+            xp.low[j] <- xmax-1
+            xp.high[j] <- xmax
+            q[j] <- 0
+          }
         }
+        #q*xp.low + (1-q)*xp.high ;; if q is 1, all weight on xp.low; vice versa
         
-        #Record the maximum fitness in the fitness matrix
-        W.nr[[node]][[r]][x,t] <- max(value)
+        #W is now grabbed from the ascribed fitness value at time t+1 & interpolated
+        W <- q*W.nr[[r]][xp.low,t+1] + (1-q)*W.nr[[r]][xp.high,t+1]
         
-      }#end energetic state loop
+        Fx <- as.numeric(pref.vec %*% (rep.gain[x] + (1-mort)*W))
+        
+        value[i] <- Fx
+        
+      }#end decision loop
       
+      #Record the fitness-maximizing decision
+      istar.nr[[r]][x,t] <- which(value == max(value))
       
-    }#end time loop
+      if (length(which(value==max(value))) > 1) {
+        print(paste(">1 at r=",r,"x=",x,"t=",t,sep=""))
+      }
+      
+      #Record the maximum fitness in the fitness matrix
+      W.nr[[r]][x,t] <- max(value)
+      
+    }#end energetic state loop
     
     
-  }#end current resource loop
+  }#end time loop
   
   
-}#end node loop
+}#end current resource loop
 
 #Time-invariant analysis
 istar.node <- list()
