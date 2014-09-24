@@ -74,7 +74,7 @@ rho.vec <- 1 - exp(-encounters^2/max(encounters))
 
 #Consumer-resource mortality rates
 Ratio.RC <- res.bs/cons.bs
-mp1 <- 0.4
+mp1 <- 0.1
 mort <- 0.5 - 0.5*(1 - 2*mp1)^(Ratio.RC^2)
 
 #Foraging Gains and Costs (allometric and stoichiometric)
@@ -83,16 +83,19 @@ eta <- numeric(num.res)
 g.forage <- numeric(num.res)
 for (i in 1:num.res) {
   #Foraging costs/gains conditional on consumer AND resource
-  eta[i] <- 0.1
+  eta[i] <- 0.50
   #Gains are simply a proportion of the prey's body size (generally 10%)
   #This may become more complicated if stoichiometry is introduced
   g.forage[i] <- eta[i]*res.bs[i]
 }
 #Costs should scale allometrically
 #c.forage <- 0.5*cons.bs^(1/4)
-c.forage <- 0.8*min(g.forage)
-
-
+#c.forage <- 0.8*min(g.forage)
+const <- 0.2388 #3.98 mL O2 /1000 *5kcal * 12 hours = 0.2388 Joules
+#Relatively high costs
+c.forage <- const*cons.bs^(0.66)
+#Costs lower than the lowest gain
+#c.forage <- 0.8*min(g.forage)
 
 #Gradiant of decision possibilities based on resource similarities
 num.dec <- 20
@@ -258,6 +261,8 @@ for (r in 1:num.res) {
 #Time-invariant analysis
 
 istar.node <- do.call(cbind,lapply(istar.nr,function(x){x[,1]}))
+#Eliminate the <xc rows
+istar.node <- istar.node[-seq(1,xc-1,1),]
 
 col <- RColorBrewer::brewer.pal(9, "YlOrRd")
 source("src/smooth_pal.R")
@@ -268,7 +273,7 @@ op <- par(mfrow = c(1,1),
           mar = c(0,3,1,1) + 0.1,
           mgp = c(2, 1, 0))
 
-filled_contour(seq(1, xmax, length.out = nrow(istar.node)), 
+filled_contour(seq(xc, xmax, length.out = nrow(istar.node)), 
                seq(1, num.res,length.out = ncol(istar.node)), 
                istar.node,
                levels = seq(1, max(istar.node)),col = col,
