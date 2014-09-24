@@ -36,6 +36,7 @@ for (i in xc:cons.bs) {
 #Set Habitat Heterogeneity
 #seq(0,1):: 0 is an even landscape, 1 is an open landscape
 hab.het <- 1
+
 max.nu <- 5
 min.nu <- 1
 
@@ -51,6 +52,7 @@ for (j in 1:num.res) {
 }
 #nu <- nu + 1 #Ensure that there are non-zero nu's
 
+
 max.enc <- 20
 f.res.patch <- matrix(0,(max.enc+1),num.res)
 for (j in 1:num.res) {
@@ -60,13 +62,19 @@ for (j in 1:num.res) {
   f.res.patch[,j] <- f.res.patch[,j] / sum(f.res.patch[,j])
 }
 
+#plot negative binomial distributions
+plot(seq(0,max.enc,1),f.res.patch[,1],type="l",col=colors[1],lwd=3,ylim=c(0,0.5))
+for (i in 2:num.res) {
+  lines(seq(0,max.enc,1),f.res.patch[,i],col=colors[i],lwd=3)
+}
 
+#Establish the probability of successfully capturing a single resource
 encounters <- seq(0,max.enc,1)
 rho.vec <- 1 - exp(-encounters^2/max(encounters))
 
 #Consumer-resource mortality rates
 Ratio.RC <- res.bs/cons.bs
-mp1 <- 0.2
+mp1 <- 0.4
 mort <- 0.5 - 0.5*(1 - 2*mp1)^(Ratio.RC^2)
 
 #Foraging Gains and Costs (allometric and stoichiometric)
@@ -76,9 +84,11 @@ g.forage <- numeric(num.res)
 for (i in 1:num.res) {
   #Foraging costs/gains conditional on consumer AND resource
   eta[i] <- 0.1
-  #Gains/costs scale allometrically
+  #Gains are simply a proportion of the prey's body size (generally 10%)
+  #This may become more complicated if stoichiometry is introduced
   g.forage[i] <- eta[i]*res.bs[i]
 }
+#Costs should scale allometrically
 #c.forage <- 0.5*cons.bs^(1/4)
 c.forage <- 0.8*min(g.forage)
 
