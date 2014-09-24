@@ -264,7 +264,7 @@ istar.node <- do.call(cbind,lapply(istar.nr,function(x){x[,1]}))
 #Eliminate the <xc rows
 istar.node <- istar.node[-seq(1,xc-1,1),]
 
-col <- RColorBrewer::brewer.pal(9, "YlOrRd")
+col <- RColorBrewer::brewer.pal(9, "Blues")
 source("src/smooth_pal.R")
 col <- smooth_pal(col, 5)
 
