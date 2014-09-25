@@ -9,12 +9,12 @@ source("src/filled_contour.r")
 colors <- brewer.pal(10,"Spectral")
 
 num.res <- 10
-res.bs <- round(rgamma(num.res,shape=5,scale=2),0)
+#res.bs <- round(rgamma(num.res,shape=5,scale=2),0)
 res.bs <- seq(1,num.res,length.out=num.res)
 cons.bs <- 10
 
 #Define state matrices for consumer
-tmax <- 10
+tmax <- 50
 state.matrix <-  matrix(0,cons.bs,tmax)
 
 #Define critical threshold for consumer
@@ -69,8 +69,9 @@ for (j in 1:num.res) {
 #}
 
 #Establish the probability of successfully capturing a single resource
+#The 4 in the denominator moves the half-saturation point of the curve to the right.
 encounters <- seq(0,max.enc,1)
-rho.vec <- 1 - exp(-encounters^2/max(encounters))
+rho.vec <- 1 - exp(-encounters^2/(4*max(encounters)))
 
 #Consumer-resource mortality rates
 Ratio.RC <- res.bs/cons.bs
@@ -101,9 +102,9 @@ pr.link <- p/(1+p)
 pr.nolink <- 1 - pr.link
 #c.forage <- 0.5*cons.bs^(1/4)
 #c.forage <- 0.8*min(g.forage)
-const <- 0.2388 #3.98 mL O2 /1000 *5kcal * 12 hours = 0.2388 Joules
+const <- 3.98/1000 *5 * 12 #3.98 mL O2 /1000 *5kcal * 12 hours = 0.2388 Joules
 #Relatively high costs
-c.forage <- pr.nolink*(const*cons.bs^(0.66))
+c.forage <- pr.nolink*(const*cons.bs^(0.75))
 #Costs lower than the lowest gain
 #c.forage <- 0.8*min(g.forage)
 
@@ -279,8 +280,8 @@ source("src/smooth_pal.R")
 col <- smooth_pal(col, 5)
 
 op <- par(mfrow = c(1,1),
-          oma = c(5,4,0,0) + 0.1,
-          mar = c(0,3,1,1) + 0.1,
+          oma = c(6,6,0,0) + 0.1,
+          mar = c(0,0,1,1) + 0.1,
           mgp = c(2, 1, 0))
 
 filled_contour(seq(xc, xmax, length.out = nrow(istar.node)), 
@@ -296,6 +297,7 @@ write.table(istarhab1,"istarhab1.csv",col.names=FALSE,row.names=FALSE,sep=",")
 
 
 
-
-
+#Plotting Fitness values
+plot(W.nr[[1]][1,],type="l",ylim=c(0,1.5))
+for (i in 2:10) {lines(W.nr[[1]][i,])}
 
