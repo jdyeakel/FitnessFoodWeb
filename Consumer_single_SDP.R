@@ -88,7 +88,9 @@ for (i in 1:num.res) {
   #This may become more complicated if stoichiometry is introduced
   g.forage[i] <- eta[i]*res.bs[i]
 }
-#Costs should scale allometrically
+#Costs should scale allometrically :: Shouldn't costs be a function of the resource??? ~equiv. to speed differential?
+#Latent trait probability
+
 #c.forage <- 0.5*cons.bs^(1/4)
 #c.forage <- 0.8*min(g.forage)
 const <- 0.2388 #3.98 mL O2 /1000 *5kcal * 12 hours = 0.2388 Joules
