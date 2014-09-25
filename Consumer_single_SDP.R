@@ -35,7 +35,7 @@ for (i in xc:cons.bs) {
 
 #Set Habitat Heterogeneity
 #seq(0,1):: 0 is an even landscape, 1 is an open landscape
-hab.het <- 1
+hab.het <- 0
 
 max.nu <- 5
 min.nu <- 1
@@ -63,10 +63,10 @@ for (j in 1:num.res) {
 }
 
 #plot negative binomial distributions
-plot(seq(0,max.enc,1),f.res.patch[,1],type="l",col=colors[1],lwd=3,ylim=c(0,0.5))
-for (i in 2:num.res) {
-  lines(seq(0,max.enc,1),f.res.patch[,i],col=colors[i],lwd=3)
-}
+#plot(seq(0,max.enc,1),f.res.patch[,1],type="l",col=colors[1],lwd=3,ylim=c(0,0.5))
+#for (i in 2:num.res) {
+#  lines(seq(0,max.enc,1),f.res.patch[,i],col=colors[i],lwd=3)
+#}
 
 #Establish the probability of successfully capturing a single resource
 encounters <- seq(0,max.enc,1)
@@ -90,12 +90,20 @@ for (i in 1:num.res) {
 }
 #Costs should scale allometrically :: Shouldn't costs be a function of the resource??? ~equiv. to speed differential?
 #Latent trait probability
-
+#The a1, a2, and a3 parameters are generally site-specific
+a1 <- 1.41
+a2 <- 3.73
+a3 <- -1.87
+p <- exp(a1 + a2*log(res.bs/cons.bs) + a3*log(res.bs/cons.bs)^2)
+pr.link <- p/(1+p)
+#The probability that the interaction should NOT occur
+#We will use this to weight the c.forage term
+pr.nolink <- 1 - pr.link
 #c.forage <- 0.5*cons.bs^(1/4)
 #c.forage <- 0.8*min(g.forage)
 const <- 0.2388 #3.98 mL O2 /1000 *5kcal * 12 hours = 0.2388 Joules
 #Relatively high costs
-c.forage <- const*cons.bs^(0.66)
+c.forage <- pr.nolink*(const*cons.bs^(0.66))
 #Costs lower than the lowest gain
 #c.forage <- 0.8*min(g.forage)
 
@@ -144,8 +152,8 @@ for (j in 1:num.res) {
   dec.beta.n <- apply(dec.beta,2,function(x){x/sum(x)})
   dec.ls[[j]] <- dec.beta.n
 }
-plot(dec.ls[[1]][,1],type="l",col=colors[1], ylim=c(0,0.25),lwd=3)
-for (i in 2:10) {lines(dec.ls[[1]][,i],type="l",col=colors[i],lwd=3)}
+#plot(dec.ls[[1]][,1],type="l",col=colors[1], ylim=c(0,0.25),lwd=3)
+#for (i in 2:10) {lines(dec.ls[[1]][,i],type="l",col=colors[i],lwd=3)}
 
 #Fitness matrices
 #Build core consumer fitness matrix
@@ -204,7 +212,7 @@ for (r in 1:num.res) {
         #Loop across resources
         xp <- numeric(num.res)
         for (rr in 1:num.res) {
-          delta.x <- x + rho.vec*(g.forage[rr] - c.forage) - (1-rho.vec)*c.forage
+          delta.x <- x + rho.vec*(g.forage[rr] - c.forage[rr]) - (1-rho.vec)*c.forage[rr]
           xp[rr] <- f.m[,rr] %*% delta.x
           #We must establish boundary conditions
           # xc <= xp <= xmax
@@ -281,5 +289,13 @@ filled_contour(seq(xc, xmax, length.out = nrow(istar.node)),
                levels = seq(1, max(istar.node)),col = col,
                lwd = 0.1,xlab="Energetic Reserves",ylab="Resource Size")
 par(op)
+
+
+write.table(istarhab0,"istarhab0.csv",col.names=FALSE,row.names=FALSE,sep=",")
+write.table(istarhab1,"istarhab1.csv",col.names=FALSE,row.names=FALSE,sep=",")
+
+
+
+
 
 
