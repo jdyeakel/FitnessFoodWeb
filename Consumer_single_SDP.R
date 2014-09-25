@@ -11,7 +11,7 @@ colors <- brewer.pal(10,"Spectral")
 num.res <- 10
 #res.bs <- round(rgamma(num.res,shape=5,scale=2),0)
 res.bs <- seq(1,num.res,length.out=num.res)
-cons.bs <- 10
+cons.bs <- 15
 
 #Define state matrices for consumer
 tmax <- 50
@@ -34,7 +34,7 @@ for (i in xc:cons.bs) {
 
 
 #Set Habitat Heterogeneity
-#seq(0,1):: 0 is an even landscape, 1 is an open landscape
+#seq(0,1):: 0 is an even landscape, 1 is a patchy landscape
 hab.het <- 0
 
 max.nu <- 5
@@ -71,7 +71,7 @@ for (j in 1:num.res) {
 #Establish the probability of successfully capturing a single resource
 #The 4 in the denominator moves the half-saturation point of the curve to the right.
 encounters <- seq(0,max.enc,1)
-rho.vec <- 1 - exp(-encounters^2/(4*max(encounters)))
+rho.vec <- 1 - exp(-encounters^2/(1*max(encounters)))
 
 #Consumer-resource mortality rates
 Ratio.RC <- res.bs/cons.bs
@@ -84,7 +84,7 @@ eta <- numeric(num.res)
 g.forage <- numeric(num.res)
 for (i in 1:num.res) {
   #Foraging costs/gains conditional on consumer AND resource
-  eta[i] <- 0.50
+  eta[i] <- 0.5
   #Gains are simply a proportion of the prey's body size (generally 10%)
   #This may become more complicated if stoichiometry is introduced
   g.forage[i] <- eta[i]*res.bs[i]
@@ -104,7 +104,7 @@ pr.nolink <- 1 - pr.link
 #c.forage <- 0.8*min(g.forage)
 const <- 3.98/1000 *5 * 12 #3.98 mL O2 /1000 *5kcal * 12 hours = 0.2388 Joules
 #Relatively high costs
-c.forage <- pr.nolink*(const*cons.bs^(0.75))
+c.forage <- pr.nolink*(const*cons.bs^(0.66))
 #Costs lower than the lowest gain
 #c.forage <- 0.8*min(g.forage)
 
@@ -114,6 +114,11 @@ a.beta <- seq(1,5,length.out = num.dec)
 b.beta <- seq(5,1,length.out = num.dec)
 mean.beta <- a.beta/(a.beta + b.beta)
 param.beta <- cbind(a.beta,b.beta)
+
+# !!!!!!!!!!!!!!!!
+# PROBLEM :: WE ARE NOT GETTING EVENLY DISTRIBUTED BETA DISTRIBUTIONS OVER DECISION TYPE!!!!
+# !!!!!!!!!!!!!!!!
+
 
 #Resource similarity ~ cosine similarity index
 #0 = entirely dissimilar
