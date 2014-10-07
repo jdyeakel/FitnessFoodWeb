@@ -115,32 +115,33 @@ b.beta <- seq(5,1,length.out = num.dec)
 mean.beta <- a.beta/(a.beta + b.beta)
 param.beta <- cbind(a.beta,b.beta)
 
-# !!!!!!!!!!!!!!!!
-# PROBLEM :: WE ARE NOT GETTING EVENLY DISTRIBUTED BETA DISTRIBUTIONS OVER DECISION TYPE!!!!
-# !!!!!!!!!!!!!!!!
+
+# DOES NOT WORK ~ ASSYMMETRIC
+# #Resource similarity ~ cosine similarity index
+# #0 = entirely dissimilar
+# #1 = entirely similar
+# res.sim <- matrix(0,num.res,num.res)
+# for (i in 1:num.res) {
+#   for (j in 1:num.res) {
+#     resi.att <- c(1,res.bs[i]) #in multidimensional trait space, this would be a vector of attributes
+#     resj.att <- c(1,res.bs[j])
+#     res.sim[i,j] <- (resi.att %*% resj.att)/ sqrt((resi.att %*% resi.att) * (resj.att %*% resj.att))
+#   }
+# }
 
 
-#Resource similarity ~ cosine similarity index
+#Resource similarity ~ Euclidean Distance ~ This will only work with numeric measures! Right now, just body size
 #0 = entirely dissimilar
 #1 = entirely similar
 res.sim <- matrix(0,num.res,num.res)
+max.diff <- sqrt((min(res.bs) - max(res.bs))^2)
 for (i in 1:num.res) {
   for (j in 1:num.res) {
-    resi.att <- c(1,res.bs[i]) #in multidimensional trait space, this would be a vector of attributes
-    resj.att <- c(1,res.bs[j])
-    res.sim[i,j] <- (resi.att %*% resj.att)/ sqrt((resi.att %*% resi.att) * (resj.att %*% resj.att))
+    resi.att <- res.bs[i] #in multidimensional trait space, this would be a vector of attributes
+    resj.att <- res.bs[j]
+    res.sim[i,j] <- 1 - (sqrt((resi.att - resj.att)^2) / max.diff)
   }
 }
-#Right now, having trouble with res.sim = 1. It is generally extremely low for all beta dist. other than
-#beta (5,1) ~ the last. Rather, the prob(1) should increase as mean beta increases. 
-#res.sim <- res.sim - 0.1
-
-# #stretch between 0 and 1 for each similarity column
-# for (i in 1:num.res) {
-#   res.sim.low <- res.sim[,i] - (min(res.sim[,i]))
-#   res.sim[,i] <- res.sim.low/max(res.sim.low)
-# }
-
 
 #Build decision probabilities
 #For every 'current' resource, what is the preference probability based on each decision beta dist?
