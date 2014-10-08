@@ -37,7 +37,7 @@ for (i in xc:cons.bs) {
 #seq(0,1):: 0 is an even landscape, 1 is a patchy landscape
 
 #Single value patchiness
-hab.het <- rep(0,num.res)
+hab.het <- rep(1,num.res)
 #Body size dependent patchiness
 
 #Small animals are uniform; Large animals are patchy
@@ -48,7 +48,7 @@ hab.het <- seq(1,0,length.out=num.res)
 
 
 
-max.nu <- 5
+max.nu <- 10
 min.nu <- 1
 
 #Mean encounter rates of prey in region i should be scaled to body size of resource
@@ -81,8 +81,9 @@ rho.vec <- 1 - exp(-encounters^2/(1*max(encounters)))
 
 #Consumer-resource mortality rates
 Ratio.RC <- res.bs/cons.bs
-mp1 <- 0.2
+mp1 <- 0.1
 mort <- 0.5 - 0.5*(1 - 2*mp1)^(Ratio.RC^2)
+
 
 #Foraging Gains and Costs (allometric and stoichiometric)
 c.rep <- 0.05*cons.bs
@@ -110,10 +111,10 @@ const <- 3.98/1000 *5 * 12 #3.98 mL O2 /1000 *5kcal * 12 hours = 0.2388 Joules
 #Relatively high costs
 
 #Prey-dependent costs
-#c.forage <- pr.nolink*(const*cons.bs^(0.66))
+c.forage <- pr.nolink*(const*cons.bs^(0.66))
 
 #Single cost
-c.forage <- rep(const*cons.bs^(0.66),num.res)
+#c.forage <- rep(const*cons.bs^(0.66),num.res)
 
 
 #Gradiant of decision possibilities based on resource similarities
@@ -259,7 +260,7 @@ for (r in 1:num.res) {
         #W is now grabbed from the ascribed fitness value at time t+1 & interpolated
         W <- q*W.nr[[r]][xp.low,t+1] + (1-q)*W.nr[[r]][xp.high,t+1]
         
-        # Die * rep.fitness + (1-die)*(rep.fitness + accum.fitness)
+        # Die * rep.fitness + (1-die)*(rep.fitness + accum.fitness) ~~ I think this might be equivalent to what was there before :-)
         Fx <- as.numeric(pref.vec %*% (mort*rep.gain[x] + (1-mort)*(rep.gain[x] + W)))
         
         value[i] <- Fx
