@@ -8,10 +8,10 @@ library(lattice)
 source("src/filled_contour.r")
 colors <- brewer.pal(10,"Spectral")
 
-num.res <- 10
+num.res <- 15
 #res.bs <- round(rgamma(num.res,shape=5,scale=2),0)
 res.bs <- seq(1,num.res,length.out=num.res)
-cons.bs <- 15
+cons.bs <- 10
 
 #Define state matrices for consumer
 tmax <- 50
@@ -35,7 +35,18 @@ for (i in xc:cons.bs) {
 
 #Set Habitat Heterogeneity
 #seq(0,1):: 0 is an even landscape, 1 is a patchy landscape
-hab.het <- 0
+
+#Single value patchiness
+hab.het <- rep(0,num.res)
+#Body size dependent patchiness
+
+#Small animals are uniform; Large animals are patchy
+hab.het <- seq(0,1,length.out=num.res)
+
+#Small animals are patchy; Large animals are uniform
+hab.het <- seq(1,0,length.out=num.res)
+
+
 
 max.nu <- 5
 min.nu <- 1
@@ -43,15 +54,10 @@ min.nu <- 1
 #Mean encounter rates of prey in region i should be scaled to body size of resource
 #Dispersion of prey in region i should be scaled to the variability in nearest neighbors to nearest neighbors in i
 #This is essentially the "Local Heterogeneity"
-xi <- numeric(num.res)
-nu <- numeric(num.res)
-for (j in 1:num.res) {
-  xi[j] <- (1/res.bs[j])*10
-  #nu[i,j] <- (1/res.bs[j])*10*(nn2.sd[i]+2)
-  nu[j] <- max.nu - (hab.het*(max.nu-min.nu))
-}
-#nu <- nu + 1 #Ensure that there are non-zero nu's
 
+xi <- (1/res.bs)*10
+#nu[i,j] <- (1/res.bs[j])*10*(nn2.sd[i]+2)
+nu <- max.nu - (hab.het*(max.nu-min.nu))
 
 max.enc <- 20
 f.res.patch <- matrix(0,(max.enc+1),num.res)
@@ -63,10 +69,10 @@ for (j in 1:num.res) {
 }
 
 #plot negative binomial distributions
-#plot(seq(0,max.enc,1),f.res.patch[,1],type="l",col=colors[1],lwd=3,ylim=c(0,0.5))
-#for (i in 2:num.res) {
+# plot(seq(0,max.enc,1),f.res.patch[,1],type="l",col=colors[1],lwd=3,ylim=c(0,0.5))
+# for (i in 2:num.res) {
 #  lines(seq(0,max.enc,1),f.res.patch[,i],col=colors[i],lwd=3)
-#}
+# }
 
 #Establish the probability of successfully capturing a single resource
 #The 4 in the denominator moves the half-saturation point of the curve to the right.
@@ -75,7 +81,7 @@ rho.vec <- 1 - exp(-encounters^2/(1*max(encounters)))
 
 #Consumer-resource mortality rates
 Ratio.RC <- res.bs/cons.bs
-mp1 <- 0.1
+mp1 <- 0.2
 mort <- 0.5 - 0.5*(1 - 2*mp1)^(Ratio.RC^2)
 
 #Foraging Gains and Costs (allometric and stoichiometric)
@@ -84,7 +90,7 @@ eta <- numeric(num.res)
 g.forage <- numeric(num.res)
 for (i in 1:num.res) {
   #Foraging costs/gains conditional on consumer AND resource
-  eta[i] <- 0.5
+  eta[i] <- 0.1
   #Gains are simply a proportion of the prey's body size (generally 10%)
   #This may become more complicated if stoichiometry is introduced
   g.forage[i] <- eta[i]*res.bs[i]
@@ -100,13 +106,15 @@ pr.link <- p/(1+p)
 #The probability that the interaction should NOT occur
 #We will use this to weight the c.forage term
 pr.nolink <- 1 - pr.link
-#c.forage <- 0.5*cons.bs^(1/4)
-#c.forage <- 0.8*min(g.forage)
 const <- 3.98/1000 *5 * 12 #3.98 mL O2 /1000 *5kcal * 12 hours = 0.2388 Joules
 #Relatively high costs
-c.forage <- pr.nolink*(const*cons.bs^(0.66))
-#Costs lower than the lowest gain
-#c.forage <- 0.8*min(g.forage)
+
+#Prey-dependent costs
+#c.forage <- pr.nolink*(const*cons.bs^(0.66))
+
+#Single cost
+c.forage <- rep(const*cons.bs^(0.66),num.res)
+
 
 #Gradiant of decision possibilities based on resource similarities
 num.dec <- 20
@@ -251,7 +259,8 @@ for (r in 1:num.res) {
         #W is now grabbed from the ascribed fitness value at time t+1 & interpolated
         W <- q*W.nr[[r]][xp.low,t+1] + (1-q)*W.nr[[r]][xp.high,t+1]
         
-        Fx <- as.numeric(pref.vec %*% (rep.gain[x] + (1-mort)*W))
+        # Die * rep.fitness + (1-die)*(rep.fitness + accum.fitness)
+        Fx <- as.numeric(pref.vec %*% (mort*rep.gain[x] + (1-mort)*(rep.gain[x] + W)))
         
         value[i] <- Fx
         
@@ -281,9 +290,9 @@ istar.node <- do.call(cbind,lapply(istar.nr,function(x){x[,1]}))
 #Eliminate the <xc rows
 istar.node <- istar.node[-seq(1,xc-1,1),]
 
-col <- RColorBrewer::brewer.pal(9, "Blues")
+col <- RColorBrewer::brewer.pal(8, "Blues")
 source("src/smooth_pal.R")
-col <- smooth_pal(col, 5)
+col <- smooth_pal(col, 4)
 
 op <- par(mfrow = c(1,1),
           oma = c(6,6,0,0) + 0.1,
@@ -297,8 +306,10 @@ filled_contour(seq(xc, xmax, length.out = nrow(istar.node)),
                lwd = 0.1,xlab="Energetic Reserves",ylab="Resource Size")
 par(op)
 
-
+istarhab0 <- istar.node
 write.table(istarhab0,"istarhab0.csv",col.names=FALSE,row.names=FALSE,sep=",")
+
+istarhab1 <- istar.node
 write.table(istarhab1,"istarhab1.csv",col.names=FALSE,row.names=FALSE,sep=",")
 
 
