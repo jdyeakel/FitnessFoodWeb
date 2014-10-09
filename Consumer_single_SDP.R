@@ -122,6 +122,7 @@ const <- 3.98/1000 *5 * 12 #3.98 mL O2 /1000 *5kcal * 12 hours = 0.2388 Joules
 c.forage <- rep(const*cons.bs^(0.66),num.res)
 
 
+
 #Gradiant of decision possibilities based on resource similarities
 num.dec <- 20
 a.beta <- seq(1,5,length.out = num.dec)
@@ -175,6 +176,14 @@ for (j in 1:num.res) {
 }
 #plot(dec.ls[[1]][,1],type="l",col=colors[1], ylim=c(0,0.25),lwd=3)
 #for (i in 2:10) {lines(dec.ls[[1]][,i],type="l",col=colors[i],lwd=3)}
+
+
+###########################
+# Additional Learning costs
+###########################
+c.learn <- matrix(0,num.res,num.res) #NO LEARNING CURVE
+
+
 
 #Fitness matrices
 #Build core consumer fitness matrix
@@ -235,7 +244,7 @@ for (r in 1:num.res) {
         xp <- numeric(num.res)
         for (rr in 1:num.res) {
           #determine the change in x for each amt k resources (which defines the rho.vec)
-          delta.x <- x + rho.vec*(g.forage[rr] - c.forage[rr]) - (1-rho.vec)*c.forage[rr]
+          delta.x <- x + rho.vec*(g.forage[rr] - (c.forage[rr] + c.learn[r,rr])) - (1-rho.vec)*(c.forage[rr] + c.learn[r,rr])
           #Multiply the prob(k)*delta x and sum
           xp[rr] <- f.m[,rr] %*% delta.x
           #We must establish boundary conditions
