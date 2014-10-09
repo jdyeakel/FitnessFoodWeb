@@ -8,13 +8,15 @@ library(lattice)
 source("src/filled_contour.r")
 colors <- brewer.pal(10,"Spectral")
 
-num.res <- 15
+max.res.bs <- 1000
+num.res <- 20
+
 #res.bs <- round(rgamma(num.res,shape=5,scale=2),0)
-res.bs <- seq(1,num.res,length.out=num.res)
-cons.bs <- 10
+res.bs <- round(seq(1,max.res.bs,length.out=num.res),0)
+cons.bs <- 20
 
 #Define state matrices for consumer
-tmax <- 50
+tmax <- 10
 state.matrix <-  matrix(0,cons.bs,tmax)
 
 #Define critical threshold for consumer
@@ -55,7 +57,7 @@ min.nu <- 1
 #Dispersion of prey in region i should be scaled to the variability in nearest neighbors to nearest neighbors in i
 #This is essentially the "Local Heterogeneity"
 
-xi <- (1/res.bs)*10
+xi <- seq(10,1,length.out=num.res)
 #nu[i,j] <- (1/res.bs[j])*10*(nn2.sd[i]+2)
 nu <- max.nu - (hab.het*(max.nu-min.nu))
 
@@ -69,10 +71,10 @@ for (j in 1:num.res) {
 }
 
 #plot negative binomial distributions
-# plot(seq(0,max.enc,1),f.res.patch[,1],type="l",col=colors[1],lwd=3,ylim=c(0,0.5))
-# for (i in 2:num.res) {
-#  lines(seq(0,max.enc,1),f.res.patch[,i],col=colors[i],lwd=3)
-# }
+plot(seq(0,max.enc,1),f.res.patch[,1],type="l",col=colors[1],lwd=3,ylim=c(0,0.5))
+for (i in 2:num.res) {
+ lines(seq(0,max.enc,1),f.res.patch[,i],col=colors[i],lwd=3)
+}
 
 #Establish the probability of successfully capturing a single resource
 #The 4 in the denominator moves the half-saturation point of the curve to the right.
@@ -81,8 +83,8 @@ rho.vec <- 1 - exp(-encounters^2/(1*max(encounters)))
 
 #Consumer-resource mortality rates
 Ratio.RC <- res.bs/cons.bs
-mp1 <- 0.1
-mort <- 0.5 - 0.5*(1 - 2*mp1)^(Ratio.RC^2)
+mp1 <- 0.003
+mort <- 0.2 - 0.2*(1 - 2*mp1)^(Ratio.RC^2)
 
 
 #Foraging Gains and Costs (allometric and stoichiometric)
@@ -287,7 +289,8 @@ for (r in 1:num.res) {
 
 #Time-invariant analysis
 
-istar.node <- do.call(cbind,lapply(istar.nr,function(x){x[,1]}))
+time.stamp <- 9
+istar.node <- do.call(cbind,lapply(istar.nr,function(x){x[,time.stamp]}))
 #Eliminate the <xc rows
 istar.node <- istar.node[-seq(1,xc-1,1),]
 
