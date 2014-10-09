@@ -6,7 +6,10 @@ library(igraph)
 library(beanplot)
 library(lattice)
 source("src/filled_contour.r")
-colors <- brewer.pal(10,"Spectral")
+source("src/smooth_pal.R")
+
+colors <- brewer.pal(5,"Spectral")
+colors <- smooth_pal(colors, 5)
 
 max.res.bs <- 1000
 num.res <- 20
@@ -71,7 +74,7 @@ for (j in 1:num.res) {
 }
 
 #plot negative binomial distributions
-plot(seq(0,max.enc,1),f.res.patch[,1],type="l",col=colors[1],lwd=3,ylim=c(0,0.5))
+plot(seq(0,max.enc,1),f.res.patch[,1],type="l",col=colors[1],lwd=3,ylim=c(0,max(f.res.patch)))
 for (i in 2:num.res) {
  lines(seq(0,max.enc,1),f.res.patch[,i],col=colors[i],lwd=3)
 }
@@ -113,10 +116,10 @@ const <- 3.98/1000 *5 * 12 #3.98 mL O2 /1000 *5kcal * 12 hours = 0.2388 Joules
 #Relatively high costs
 
 #Prey-dependent costs
-c.forage <- pr.nolink*(const*cons.bs^(0.66))
+#c.forage <- pr.nolink*(const*cons.bs^(0.66))
 
 #Single cost
-#c.forage <- rep(const*cons.bs^(0.66),num.res)
+c.forage <- rep(const*cons.bs^(0.66),num.res)
 
 
 #Gradiant of decision possibilities based on resource similarities
@@ -225,12 +228,15 @@ for (r in 1:num.res) {
       for (i in 1:num.dec) {
         
         #Define vector of preference probabilities across resources corresp. to given decision possibility
+        #Each element is the preference probability for food resource i, given the current focal resource r
         pref.vec <- dec.m[,i]
         
         #Loop across resources
         xp <- numeric(num.res)
         for (rr in 1:num.res) {
+          #determine the change in x for each amt k resources (which defines the rho.vec)
           delta.x <- x + rho.vec*(g.forage[rr] - c.forage[rr]) - (1-rho.vec)*c.forage[rr]
+          #Multiply the prob(k)*delta x and sum
           xp[rr] <- f.m[,rr] %*% delta.x
           #We must establish boundary conditions
           # xc <= xp <= xmax
@@ -262,8 +268,7 @@ for (r in 1:num.res) {
         #W is now grabbed from the ascribed fitness value at time t+1 & interpolated
         W <- q*W.nr[[r]][xp.low,t+1] + (1-q)*W.nr[[r]][xp.high,t+1]
         
-        # Die * rep.fitness + (1-die)*(rep.fitness + accum.fitness) ~~ I think this might be equivalent to what was there before :-)
-        Fx <- as.numeric(pref.vec %*% (mort*rep.gain[x] + (1-mort)*(rep.gain[x] + W)))
+        Fx <- as.numeric(pref.vec %*% (rep.gain[x] + (1-mort)*W))
         
         value[i] <- Fx
         
@@ -294,9 +299,8 @@ istar.node <- do.call(cbind,lapply(istar.nr,function(x){x[,time.stamp]}))
 #Eliminate the <xc rows
 istar.node <- istar.node[-seq(1,xc-1,1),]
 
-col <- RColorBrewer::brewer.pal(8, "Blues")
-source("src/smooth_pal.R")
-col <- smooth_pal(col, 4)
+col <- RColorBrewer::brewer.pal(6, "Spectral")
+col <- rev(smooth_pal(col, 4))
 
 op <- par(mfrow = c(1,1),
           oma = c(6,6,0,0) + 0.1,
@@ -304,7 +308,7 @@ op <- par(mfrow = c(1,1),
           mgp = c(2, 1, 0))
 
 filled_contour(seq(xc, xmax, length.out = nrow(istar.node)), 
-               seq(1, num.res,length.out = ncol(istar.node)), 
+               res.bs, 
                istar.node,
                levels = seq(1, max(istar.node)),col = col,
                lwd = 0.1,xlab="Energetic Reserves",ylab="Resource Size")
