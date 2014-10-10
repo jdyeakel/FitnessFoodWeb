@@ -181,9 +181,9 @@ for (j in 1:num.res) {
 ###########################
 # Additional Learning costs
 ###########################
-c.learn <- matrix(0,num.res,num.res) #NO LEARNING CURVE
-
-
+learn.mag <- 0
+learn.skew <- 0.5
+c.learn <- learn.mag*(1-res.sim)^learn.skew
 
 #Fitness matrices
 #Build core consumer fitness matrix
@@ -333,5 +333,5 @@ write.table(istarhab1,"istarhab1.csv",col.names=FALSE,row.names=FALSE,sep=",")
 
 #Plotting Fitness values
 plot(W.nr[[1]][1,],type="l",ylim=c(0,1.5))
-for (i in 2:10) {lines(W.nr[[1]][i,])}
+for (i in 2:20) {lines(W.nr[[1]][i,])}
 
