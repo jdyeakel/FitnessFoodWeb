@@ -87,7 +87,8 @@ rho.vec <- 1 - exp(-encounters^2/(1*max(encounters)))
 #Consumer-resource mortality rates
 Ratio.RC <- res.bs/cons.bs
 mp1 <- 0.003
-mort <- 0.2 - 0.2*(1 - 2*mp1)^(Ratio.RC^2)
+max.mort <- 0.2
+mort <- max.mort - max.mort*(1 - 2*mp1)^(Ratio.RC^2)
 
 
 #Foraging Gains and Costs (allometric and stoichiometric)
@@ -283,15 +284,25 @@ for (r in 1:num.res) {
         
       }#end decision loop
       
-      #Record the fitness-maximizing decision
-      istar.nr[[r]][x,t] <- which(value == max(value))
+      #What is the fitness-maximizing decision?
+      max.value <- which(value == max(value))
       
-      if (length(which(value==max(value))) > 1) {
+      #Is there more than one? I hope not!
+      if (length(max.value) > 1) {
         print(paste(">1 at r=",r,"x=",x,"t=",t,sep=""))
+        istar.nr[[r]][x,t] <- 0
+        
+        #I don't know if this is legit... 
+        #it would assume that the organism would randomly choose a maximization strategy
+        #and I don't know what istar would then be
+        W.nr[[r]][x,t] <- mean(value[max.value])
+        
+      } else {
+        #Record the fitness-maximizing decision
+        istar.nr[[r]][x,t] <- max.value
+        #Record the maximum fitness in the fitness matrix
+        W.nr[[r]][x,t] <- value[max.value]
       }
-      
-      #Record the maximum fitness in the fitness matrix
-      W.nr[[r]][x,t] <- max(value)
       
     }#end energetic state loop
     
@@ -303,7 +314,7 @@ for (r in 1:num.res) {
 
 #Time-invariant analysis
 
-time.stamp <- 9
+time.stamp <- 1
 istar.node <- do.call(cbind,lapply(istar.nr,function(x){x[,time.stamp]}))
 #Eliminate the <xc rows
 istar.node <- istar.node[-seq(1,xc-1,1),]
@@ -323,10 +334,14 @@ filled_contour(seq(xc, xmax, length.out = nrow(istar.node)),
                lwd = 0.1,xlab="Energetic Reserves",ylab="Resource Size")
 par(op)
 
+#Uniform Habitat
 istarhab0 <- istar.node
+save.image("Hab0.RData")
 write.table(istarhab0,"istarhab0.csv",col.names=FALSE,row.names=FALSE,sep=",")
 
+#Patchy Habitat
 istarhab1 <- istar.node
+save.image("Hab1.RData")
 write.table(istarhab1,"istarhab1.csv",col.names=FALSE,row.names=FALSE,sep=",")
 
 
