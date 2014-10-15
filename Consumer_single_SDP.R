@@ -369,6 +369,7 @@ write.table(istarhab_dec,"istarhab_dec.csv",col.names=FALSE,row.names=FALSE,sep=
 
 
 #Plotting Fitness values
-plot(W.nr[[1]][1,],type="l",ylim=c(0,1.5))
-for (i in 2:20) {lines(W.nr[[1]][i,])}
+r <- 10
+plot(W.nr[[r]][1,],type="l",ylim=c(0,1.5))
+for (i in 2:20) {lines(W.nr[[r]][i,])}
 
