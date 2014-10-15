@@ -11,11 +11,14 @@ source("src/smooth_pal.R")
 colors <- brewer.pal(5,"Spectral")
 colors <- smooth_pal(colors, 5)
 
+#Maximum resource body mass
 max.res.bs <- 1000
+#Number of resources
 num.res <- 20
 
-#res.bs <- round(rgamma(num.res,shape=5,scale=2),0)
+#Define resource body mass vector
 res.bs <- round(seq(1,max.res.bs,length.out=num.res),0)
+#Define consumer body mass
 cons.bs <- 20
 
 #Define state matrices for consumer
@@ -204,8 +207,16 @@ for (i in 1:num.res) {
 #Build terminal fitness function
 for (i in 1:num.res) {
   for (x in xc:xmax) {
-    term.fit <- x/cons.bs
+    
+    #NOTE: I change this linear x/cons.bs to rep.gain[x]... Might be more correct 10/14/14
+    term.fit <- rep.gain[x] #x/cons.bs
+    
+    #Terminal fitness is independent of focal resource
     W.nr[[i]][x,tmax] <- term.fit
+    
+    #Or Terminal fitness is also dependent on mortality risk of focal resource
+    #W.nr[[i]][x,tmax] <- term.fit * (1 - mort[i])
+    
   }
 }
 
@@ -314,7 +325,7 @@ for (r in 1:num.res) {
 
 #Time-invariant analysis
 
-time.stamp <- 1
+time.stamp <- 9
 istar.node <- do.call(cbind,lapply(istar.nr,function(x){x[,time.stamp]}))
 #Eliminate the <xc rows
 istar.node <- istar.node[-seq(1,xc-1,1),]
@@ -343,6 +354,17 @@ write.table(istarhab0,"istarhab0.csv",col.names=FALSE,row.names=FALSE,sep=",")
 istarhab1 <- istar.node
 save.image("Hab1.RData")
 write.table(istarhab1,"istarhab1.csv",col.names=FALSE,row.names=FALSE,sep=",")
+
+#Patchines increasing with body size
+istarhab_inc <- istar.node
+save.image("Hab_inc.RData")
+write.table(istarhab_inc,"istarhab_inc.csv",col.names=FALSE,row.names=FALSE,sep=",")
+
+#Patchiness decreasing with body size
+istarhab_dec <- istar.node
+save.image("Hab_dec.RData")
+write.table(istarhab_dec,"istarhab_dec.csv",col.names=FALSE,row.names=FALSE,sep=",")
+
 
 
 
