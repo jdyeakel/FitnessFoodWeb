@@ -19,10 +19,10 @@ num.res <- 20
 #Define resource body mass vector
 res.bs <- round(seq(1,max.res.bs,length.out=num.res),0)
 #Define consumer body mass
-cons.bs <- 20
+cons.bs <- 50
 
 #Define state matrices for consumer
-tmax <- 10
+tmax <- 20
 state.matrix <-  matrix(0,cons.bs,tmax)
 
 #Define critical threshold for consumer
@@ -45,9 +45,11 @@ for (i in xc:cons.bs) {
 #seq(0,1):: 0 is an even landscape, 1 is a patchy landscape
 
 #Single value patchiness
-hab.het <- rep(1,num.res)
-#Body size dependent patchiness
+hab.het <- rep(0,num.res)
 
+hab.het <- rep(1,num.res)
+
+#Body size dependent patchiness
 #Small animals are uniform; Large animals are patchy
 hab.het <- seq(0,1,length.out=num.res)
 
@@ -85,12 +87,12 @@ for (i in 2:num.res) {
 #Establish the probability of successfully capturing a single resource
 #The 4 in the denominator moves the half-saturation point of the curve to the right.
 encounters <- seq(0,max.enc,1)
-rho.vec <- 1 - exp(-encounters^2/(1*max(encounters)))
+rho.vec <- 1 - exp(-encounters^2/(5*max(encounters)))
 
 #Consumer-resource mortality rates
 Ratio.RC <- res.bs/cons.bs
 mp1 <- 0.003
-max.mort <- 0.2
+max.mort <- 0.1
 mort <- max.mort - max.mort*(1 - 2*mp1)^(Ratio.RC^2)
 
 
@@ -260,43 +262,13 @@ for (r in 1:num.res) {
           delta.x <- x + rho.vec*(g.forage[rr] - (c.forage[rr] + c.learn[r,rr])) - (1-rho.vec)*(c.forage[rr] + c.learn[r,rr])
           #Multiply the prob(k)*delta x and sum
           #xp[rr] <- f.m[,rr] %*% delta.x
-          xp[rr,] <- delta.x
-          #We must establish boundary conditions
-          # xc <= xp <= xmax
-          # if (xp[rr] < xc) {xp[rr] <- xc}
-          # if (xp[rr] > xmax) {xp[rr] <- xmax}
+          xp[rr,] <- delta.x  
         }
-        #xp = apply(xp,c(1,2),function(z){if (z < xc) {z <- xc} else {z <- z}})
-        #xp = apply(xp,c(1,2),function(z){if (z > xmax) {z <- xmax} else {z <- z}})
+        
+        #We must establish boundary conditions
         xp[which(xp<xc)] <- xc
         xp[which(xp>xmax)] <- xmax
-        
-        #Interpolation Matrix functions
-        #         xp.low <- matrix(0,num.res,max.enc+1); xp.high <- matrix(0,num.res,max.enc+1); q <- matrix(0,num.res,max.enc+1)
-        #         W <- matrix(0,max.enc+1,num.res)
-        #         for (k in 1:max.enc+1) {
-        #           for (j in 1:num.res) {
-        #             if ((xp[j,k] != xmax) && (xp[j,k] != xc)) {
-        #               xp.low[j,k] <- as.integer(xp[j,k])
-        #               xp.high[j,k] <- xp.low[j,k] + 1
-        #               q[j,k] <- xp.high[j,k] - xp[j,k]
-        #             }
-        #             if (xp[j,k] == xc) {
-        #               xp.low[j,k] <- xc
-        #               xp.high[j,k] <- xc+1
-        #               q[j,k] <- 1
-        #             }
-        #             if (xp[j,k] == xmax) {
-        #               xp.low[j,k] <- xmax-1
-        #               xp.high[j,k] <- xmax
-        #               q[j,k] <- 0
-        #             }
-        #             
-        #             #W is now grabbed from the ascribed fitness value at time t+1 & interpolated
-        #             W[k,j] <- q[j,k]*W.nr[[r]][xp.low[j,k],t+1] + (1-q[j,k])*W.nr[[r]][xp.high[j,k],t+1]
-        #             
-        #           }
-        #         }
+
         W <- t(
           apply(xp,c(1,2),function(j){
           if ((j != xmax) && (j != xc)) {
@@ -319,26 +291,6 @@ for (r in 1:num.res) {
           }
         })
         )
-        #         #Interpolation function
-        #         xp.low <- numeric(num.res); xp.high <- numeric(num.res); q <- numeric(num.res)
-        #         for (j in 1:num.res) {
-        #           if ((xp[j] != xmax) && (xp[j] != xc)) {
-        #             xp.low[j] <- as.integer(xp[j])
-        #             xp.high[j] <- xp.low[j] + 1
-        #             q[j] <- xp.high[j] - xp[j]
-        #           }
-        #           if (xp[j] == xc) {
-        #             xp.low[j] <- xc
-        #             xp.high[j] <- xc+1
-        #             q[j] <- 1
-        #           }
-        #           if (xp[j] == xmax) {
-        #             xp.low[j] <- xmax-1
-        #             xp.high[j] <- xmax
-        #             q[j] <- 0
-        #           }
-        #         }
-        #         #q*xp.low + (1-q)*xp.high ;; if q is 1, all weight on xp.low; vice versa
         
         #Apply probabilities of finding k resources
         Wk <- numeric(num.res)
@@ -382,7 +334,7 @@ for (r in 1:num.res) {
 
 #Time-invariant analysis
 
-time.stamp <- 9
+time.stamp <- 1
 istar.node <- do.call(cbind,lapply(istar.nr,function(x){x[,time.stamp]}))
 #Eliminate the <xc rows
 istar.node <- istar.node[-seq(1,xc-1,1),]
@@ -424,6 +376,15 @@ write.table(istarhab_dec,"istarhab_dec.csv",col.names=FALSE,row.names=FALSE,sep=
 
 
 
+#Some analytics on the solutions
+
+# Has the simulation reached a steady state?
+D12 <- numeric(tmax-1)
+for (t in 1:(tmax-2)) {
+  D1 <- do.call(cbind,lapply(istar.nr,function(x){x[,t]}))
+  D2 <- do.call(cbind,lapply(istar.nr,function(x){x[,t+1]}))
+  D12[t] <- sqrt(sum((D1 - D2)^2))
+}
 
 #Plotting Fitness values
 r <- 10
