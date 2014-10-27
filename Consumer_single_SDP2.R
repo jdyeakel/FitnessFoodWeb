@@ -77,6 +77,7 @@ for (j in 1:num.res) {
   }
   f.res.patch[,j] <- f.res.patch[,j] / sum(f.res.patch[,j])
 }
+f.m <- f.res.patch
 
 #plot negative binomial distributions
 plot(seq(0,max.enc,1),f.res.patch[,1],type="l",col=colors[1],lwd=3,ylim=c(0,max(f.res.patch)))
@@ -191,6 +192,7 @@ learn.mag <- 0
 learn.skew <- 0.5
 c.learn <- learn.mag*(1-res.sim)^learn.skew
 
+
 #Fitness matrices
 #Build core consumer fitness matrix
 W.xt <- matrix(0,cons.bs,tmax)
@@ -228,9 +230,6 @@ for (i in 1:num.res) {
 #time
 #current resource
 #energetic state
-
-#Define the encounter prob. matrix (k by res)
-f.m <- f.res.patch
 
 #Loop over 'focal resource'
 for (r in 1:num.res) {
