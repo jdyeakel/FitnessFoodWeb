@@ -9,7 +9,7 @@ using namespace Rcpp;
 
 // [[Rcpp::export]]
 List SDP_single(int tmax, NumericVector res_bs, double cons_bs, int xc, NumericVector rep_gain, 
-NumericVector f_m, NumericVector rep_gain, List dec_ls, NumericVector rho_vec, NumericMatrix c_learn) {
+NumericVector f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, NumericMatrix c_learn) {
    
    //Establish iniital variables required for the SDP
    int num_res = res_bs.size();
