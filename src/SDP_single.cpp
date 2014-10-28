@@ -9,7 +9,9 @@ NumericMatrix f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, Numer
    
    //Establish iniital variables required for the SDP
    int num_res = res_bs.size();
-   int num_dec = dec_ls.size();
+   //How many decisions? Count columns on first decision matrix
+   NumericMatrix dec_ex = dec_ls(0);
+   int num_dec = dec_ex.ncol();
    int max_enc = f_m.nrow(); //Rows = encounters; Columns = resources
    
    double cons_bs_state = (double) cons_bs;
@@ -109,6 +111,11 @@ NumericMatrix f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, Numer
                  double xp_h = (double) xp_high(rr,k);
                  q(rr,k) = xp_h - xp(rr,k);
                  
+                 //Prep for indexing
+                 //Adjust xp_low and xp_high to signify indices rather than energetic values
+                 xp_low(rr,k) = xp_low(rr,k) - 1;
+                 xp_high(rr,k) = xp_high(rr,k) - 1;
+                 
                  W(rr,k) = q(rr,k)*W_r(xp_low(rr,k),t+1) + (1-q(rr,k))*W_r(xp_high(rr,k),t+1);
                }
                
@@ -118,6 +125,11 @@ NumericMatrix f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, Numer
                  xp_high(rr,k) = (int) xc_state+1;
                  q(rr,k) = 1;
                  
+                 //Prep for indexing
+                 //Adjust xp_low and xp_high to signify indices rather than energetic values
+                 xp_low(rr,k) = xp_low(rr,k) - 1;
+                 xp_high(rr,k) = xp_high(rr,k) - 1;
+                 
                  W(rr,k) = q(rr,k)*W_r(xp_low(rr,k),t+1) + (1-q(rr,k))*W_r(xp_high(rr,k),t+1);
                }
                
@@ -126,6 +138,11 @@ NumericMatrix f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, Numer
                  xp_low(rr,k) = (int) cons_bs_state - 1;
                  xp_high(rr,k) = (int) cons_bs_state;
                  q(rr,k) = 0;
+                 
+                 //Prep for indexing
+                 //Adjust xp_low and xp_high to signify indices rather than energetic values
+                 xp_low(rr,k) = xp_low(rr,k) - 1;
+                 xp_high(rr,k) = xp_high(rr,k) - 1;
                  
                  W(rr,k) = q(rr,k)*W_r(xp_low(rr,k),t+1) + (1-q(rr,k))*W_r(xp_high(rr,k),t+1);
                }
@@ -137,10 +154,13 @@ NumericMatrix f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, Numer
                
              } // end k
              
+             
              //Vector multiplication over preference probabilities and Wk ** over rr **
              double vec2 = pref_vec(rr) * (rep_gain(x) + (1-mort(rr))*Wk(rr));
              Fx += vec2;
-           
+             
+             //Rcpp::Rcout << "Fx = " << Fx << std::endl;
+             
            } // end rr
            
            //Record fitness value for decision i
@@ -151,7 +171,7 @@ NumericMatrix f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, Numer
          //Find maximum value
          int istar = which_max(value);
          
-         istar_r(x,t) = istar;
+         istar_r(x,t) = istar + 1; //The +1 is there because we are going from 'index' to 'decision number'
          W_r(x,t) = value(istar);
          
        } //End x iterations

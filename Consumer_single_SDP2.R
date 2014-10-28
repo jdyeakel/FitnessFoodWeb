@@ -14,7 +14,7 @@ colors <- smooth_pal(colors, 5)
 #Maximum resource body mass
 max.res.bs <- 1000
 #Number of resources
-num.res <- 20
+num.res <- 15
 
 #Define resource body mass vector
 res.bs <- round(seq(1,max.res.bs,length.out=num.res),0)
@@ -396,9 +396,11 @@ for (t in 1:(tmax-2)) {
   D2 <- do.call(cbind,lapply(istar.nr,function(x){x[,t+1]}))
   D12[t] <- sqrt(sum((D1 - D2)^2))
 }
+plot(D12,type="l")
+
 
 #Plotting Fitness values
-r <- 10
+r <- 5
 plot(W.nr[[r]][1,],type="l",ylim=c(0,1.5))
 for (i in 2:20) {lines(W.nr[[r]][i,])}
 
