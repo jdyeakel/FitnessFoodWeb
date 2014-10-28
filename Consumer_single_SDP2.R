@@ -331,6 +331,17 @@ for (r in 1:num.res) {
   
 }#end current resource loop
 
+
+####
+# Alternative Cpp version
+
+sourceCpp("src/SDP_single.cpp")
+
+cout <- SDP_single(tmax, res.bs, cons.bs, xc, rep.gain, 
+           f.m, mort, dec.ls, rho.vec, c.learn, g.forage, c.forage)
+
+
+
 #Time-invariant analysis
 
 time.stamp <- 1

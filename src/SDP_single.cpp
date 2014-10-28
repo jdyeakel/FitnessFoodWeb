@@ -5,15 +5,15 @@ using namespace Rcpp;
 
 // [[Rcpp::export]]
 List SDP_single(int tmax, NumericVector res_bs, double cons_bs, int xc, NumericVector rep_gain, 
-NumericVector f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, NumericMatrix c_learn) {
+NumericMatrix f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, NumericMatrix c_learn, NumericVector g_forage, NumericVector c_forage) {
    
    //Establish iniital variables required for the SDP
    int num_res = res_bs.size();
    int num_dec = dec_ls.size();
-   int max_enc = f_m.size(2); //Make sure this is right :)
+   int max_enc = f_m.nrow(); //Rows = encounters; Columns = resources
    
    //Define xc_state as a double. This variable will be used for energetic calculations
-   double xc_state = as<double>(xc);
+   double xc_state = (double) xc;
    //Define xc, which will be used to locate the critical value in a matrix. 
    //Subtract one, because Cpp indices start at zero.
    xc = xc - 1;
@@ -27,8 +27,8 @@ NumericVector f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, Numer
    
    //Initiate terminal fitness values in W_xt matrix
    //Don't forget that the matrix index BEGINS at 0.
-   for (int i=xc; i<cons_bs, i++) {
-     W_xt(i,tmax) = rep.gain(i);
+   for (int i=xc; i<cons_bs; i++) {
+     W_xt(i,tmax) = rep_gain(i);
    } 
    
    //Place fitness matrix and istar matrix into each list element for future updating
@@ -40,6 +40,8 @@ NumericVector f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, Numer
    //Begin Backwards Equation
    for (int r=0; r<num_res; r++) {
      
+     Rcpp::Rcout << "r = " << r << std::endl;
+     
      NumericMatrix dec_m = dec_ls(r);
      
      NumericMatrix W_r = W_nr(r);
@@ -49,6 +51,11 @@ NumericVector f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, Numer
      for (int t=(tmax-1); t --> 0;) {
        
        for (int x=xc; x<cons_bs; x++) {
+         
+         //Define the energetic state to be used in calculations
+         //Added one because the index starts at zero... but we care about the true energetic state, not the index
+         double x_state = (double) x;
+         x_state = x_state + 1;
          
          NumericVector value(num_dec);
          
@@ -63,20 +70,24 @@ NumericVector f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, Numer
            
            //Loop over the changes in energetic reserves via consumption of different (t+1) resources
            NumericMatrix xp(num_res,max_enc);
-           NumericMatrix xp_high(num_res,max_enc);
-           NumericMatrix xp_low(num_res,max_enc);
+           
+           //xp high and low must be integers, because they are used as indices of the fitness matrices
+           IntegerMatrix xp_high(num_res,max_enc); 
+           IntegerMatrix xp_low(num_res,max_enc);
+           
+           //But these are not integer matrices
            NumericMatrix q(num_res,max_enc);
            NumericMatrix W(num_res,max_enc);
            
            NumericVector Wk(num_res);
            
-           double Fx;
+           double Fx = 0; //Initialized at zero. Will be added/multiplied as dot product below
            
            for (int rr=0; rr<num_res; rr++) {
              for (int k=0; k<max_enc; k++) {
                
                //Change in Energetic state
-               xp(rr,k) = x + rho_vec(k)*(g_forage(rr) - (c_forage(rr) + c_learn(r,rr))) - (1-rho_vec(k))*(c_forage(rr) + c_learn(r,rr));
+               xp(rr,k) = x_state + rho_vec(k)*(g_forage(rr) - (c_forage(rr) + c_learn(r,rr))) - (1-rho_vec(k))*(c_forage(rr) + c_learn(r,rr));
                
                //Establish Boundary conditions en route
                //Lower boundary condition at x-critical
@@ -88,33 +99,37 @@ NumericVector f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, Numer
                //Estabish Fitness en route
                if ((xp(rr,k) < cons_bs) && (xp(rr,k) > xc_state)) {
                  
-                 xp_low(rr,k) = floor(xp(rr,k));
-                 xp_high(rr,k) = xp_low(rr,k) + 1;
-                 q(rr,k) = xp_high(rr,k) - xp(rr,k);
+                 xp_low(rr,k) = (int) floor(xp(rr,k));
+                 xp_high(rr,k) = (int) xp_low(rr,k) + 1;
                  
-                 W(rr,k) = q(rr,k)*W_r(xp_low(rr,k),t+1) + (1-q(rr,k))*W_r(xp_high,t+1);
+                 //Make sure that we do not have an integer - double
+                 double xp_h = (double) xp_high(rr,k);
+                 q(rr,k) = xp_h - xp(rr,k);
+                 
+                 W(rr,k) = q(rr,k)*W_r(xp_low(rr,k),t+1) + (1-q(rr,k))*W_r(xp_high(rr,k),t+1);
                }
                
                if (xp(rr,k) == xc_state) {
                  
-                 xp_low(rr,k) = xc_state;
-                 xp_high(rr,k) = xc_state+1;
+                 xp_low(rr,k) = (int) xc_state;
+                 xp_high(rr,k) = (int) xc_state+1;
                  q(rr,k) = 1;
                  
-                 W(rr,k) = q(rr,k)*W_r(xp_low(rr,k),t+1) + (1-q(rr,k))*W_r(xp_high,t+1);
+                 W(rr,k) = q(rr,k)*W_r(xp_low(rr,k),t+1) + (1-q(rr,k))*W_r(xp_high(rr,k),t+1);
                }
+               
                if (xp(rr,k) == cons_bs) {
                  
-                 xp_low(rr,k) = cons_bs - 1;
-                 xp_high(rr,k) = cons_bs;
+                 xp_low(rr,k) = (int) cons_bs - 1;
+                 xp_high(rr,k) = (int) cons_bs;
                  q(rr,k) = 0;
                  
-                 W(rr,k) = q(rr,k)*W_r(xp_low(rr,k),t+1) + (1-q(rr,k))*W_r(xp_high,t+1);
+                 W(rr,k) = q(rr,k)*W_r(xp_low(rr,k),t+1) + (1-q(rr,k))*W_r(xp_high(rr,k),t+1);
                }
                
                //Vector multiplication: fitness vector (over k) and probability of finding k resources (over k)
                //Note that the values for the W and f.m matrices are transposed relative to each other
-               double vec = W(rr,k) * f.m(k,rr);
+               double vec = W(rr,k) * f_m(k,rr);
                Wk(rr) += vec; // The same as Wk(rr) = Wk(rr) + vec
                
              } // end k
