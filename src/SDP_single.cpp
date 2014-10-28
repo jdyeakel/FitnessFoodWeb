@@ -4,7 +4,7 @@ using namespace Rcpp;
 //Function for a single-consumer diet-switching SDP.
 
 // [[Rcpp::export]]
-List SDP_single(int tmax, NumericVector res_bs, double cons_bs, int xc, NumericVector rep_gain, 
+List SDP_single(int tmax, NumericVector res_bs, int cons_bs, int xc, NumericVector rep_gain, 
 NumericMatrix f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, NumericMatrix c_learn, NumericVector g_forage, NumericVector c_forage) {
    
    //Establish iniital variables required for the SDP
@@ -12,6 +12,7 @@ NumericMatrix f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, Numer
    int num_dec = dec_ls.size();
    int max_enc = f_m.nrow(); //Rows = encounters; Columns = resources
    
+   double cons_bs_state = (double) cons_bs;
    //Define xc_state as a double. This variable will be used for energetic calculations
    double xc_state = (double) xc;
    //Define xc, which will be used to locate the critical value in a matrix. 
@@ -23,18 +24,18 @@ NumericMatrix f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, Numer
    List istar_nr(num_res);
    
    NumericMatrix W_xt(cons_bs,tmax);
-   NumericMatrix istar_xt(cons_bs,tmax-1);
+   //NumericMatrix istar_xt(cons_bs,tmax-1);
    
    //Initiate terminal fitness values in W_xt matrix
    //Don't forget that the matrix index BEGINS at 0.
    for (int i=xc; i<cons_bs; i++) {
-     W_xt(i,tmax) = rep_gain(i);
+     W_xt(i,tmax-1) = rep_gain(i); //tmax-1 because index starts at zero. So tmax-1 is the terminal time, as t=0 is initial time
    } 
    
-   //Place fitness matrix and istar matrix into each list element for future updating
+   //Place fitness matrix into each list element for future updating
    for (int i=0; i<num_res; i++) {
      W_nr(i) = W_xt;
-     istar_nr(i) = istar_xt;
+     //istar_nr(i) = istar_xt;
    }
    
    //Begin Backwards Equation
@@ -45,10 +46,13 @@ NumericMatrix f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, Numer
      NumericMatrix dec_m = dec_ls(r);
      
      NumericMatrix W_r = W_nr(r);
-     NumericMatrix istar_r = istar_nr(r);
+     IntegerMatrix istar_r(cons_bs,tmax-1);
      
      //Begin backwards calculations... start at tmax-1
      for (int t=(tmax-1); t --> 0;) {
+       
+       //Rcpp::Rcout << "t = " << t << std::endl;
+       //int t_state = t - 1;
        
        for (int x=xc; x<cons_bs; x++) {
          
@@ -63,7 +67,6 @@ NumericMatrix f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, Numer
            
            //Build preference vector for ith decision
            NumericVector pref_vec(num_res);
-           
            for (int j=0; j<num_res; j++) {
              pref_vec(j) = dec_m(j,i);
            }
@@ -93,16 +96,16 @@ NumericMatrix f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, Numer
                //Lower boundary condition at x-critical
                if (xp(rr,k) < xc_state) {xp(rr,k) = xc_state;}
                //Higher boundary condition at xmax = cons_bs
-               if (xp(rr,k) > cons_bs) {xp(rr,k) = cons_bs;}
+               if (xp(rr,k) > cons_bs_state) {xp(rr,k) = cons_bs_state;}
                
                //Build xp_high, xp_low, and q matrices en route
                //Estabish Fitness en route
-               if ((xp(rr,k) < cons_bs) && (xp(rr,k) > xc_state)) {
+               if ((xp(rr,k) < cons_bs_state) && (xp(rr,k) > xc_state)) {
                  
                  xp_low(rr,k) = (int) floor(xp(rr,k));
                  xp_high(rr,k) = (int) xp_low(rr,k) + 1;
                  
-                 //Make sure that we do not have an integer - double
+                 //Make sure that we do not have an (integer - double)
                  double xp_h = (double) xp_high(rr,k);
                  q(rr,k) = xp_h - xp(rr,k);
                  
@@ -118,10 +121,10 @@ NumericMatrix f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, Numer
                  W(rr,k) = q(rr,k)*W_r(xp_low(rr,k),t+1) + (1-q(rr,k))*W_r(xp_high(rr,k),t+1);
                }
                
-               if (xp(rr,k) == cons_bs) {
+               if (xp(rr,k) == cons_bs_state) {
                  
-                 xp_low(rr,k) = (int) cons_bs - 1;
-                 xp_high(rr,k) = (int) cons_bs;
+                 xp_low(rr,k) = (int) cons_bs_state - 1;
+                 xp_high(rr,k) = (int) cons_bs_state;
                  q(rr,k) = 0;
                  
                  W(rr,k) = q(rr,k)*W_r(xp_low(rr,k),t+1) + (1-q(rr,k))*W_r(xp_high(rr,k),t+1);
@@ -155,7 +158,8 @@ NumericMatrix f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, Numer
        
      } //End t iterations
      
-     //Update W_nr and istar_nr list
+     //Replace updated W_nr
+     //Update istar_nr list
      W_nr(r) = W_r;
      istar_nr(r) = istar_r;
      

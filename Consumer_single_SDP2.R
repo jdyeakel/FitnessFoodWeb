@@ -19,7 +19,7 @@ num.res <- 20
 #Define resource body mass vector
 res.bs <- round(seq(1,max.res.bs,length.out=num.res),0)
 #Define consumer body mass
-cons.bs <- 50
+cons.bs <- 20
 
 #Define state matrices for consumer
 tmax <- 20
@@ -339,12 +339,13 @@ sourceCpp("src/SDP_single.cpp")
 
 cout <- SDP_single(tmax, res.bs, cons.bs, xc, rep.gain, 
            f.m, mort, dec.ls, rho.vec, c.learn, g.forage, c.forage)
-
+W.nr <- cout[[1]]
+istar.nr <- cout[[2]]
 
 
 #Time-invariant analysis
 
-time.stamp <- 1
+time.stamp <- 19
 istar.node <- do.call(cbind,lapply(istar.nr,function(x){x[,time.stamp]}))
 #Eliminate the <xc rows
 istar.node <- istar.node[-seq(1,xc-1,1),]
