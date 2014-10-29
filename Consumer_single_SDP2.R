@@ -5,6 +5,7 @@ library(Rcpp)
 library(igraph)
 library(beanplot)
 library(lattice)
+library(emdbook)
 source("src/filled_contour.r")
 source("src/smooth_pal.R")
 
@@ -14,15 +15,19 @@ colors <- smooth_pal(colors, 5)
 #Maximum resource body mass
 max.res.bs <- 1000
 #Number of resources
-num.res <- 15
+num.res <- 20
 
 #Define resource body mass vector
 res.bs <- round(seq(1,max.res.bs,length.out=num.res),0)
+
+#Logged body mass sequence version
+#res.bs <- round(lseq(1,max.res.bs,length.out=num.res),0); res.bs <- unique(res.bs); num.res <- length(res.bs)
+
 #Define consumer body mass
 cons.bs <- 20
 
 #Define state matrices for consumer
-tmax <- 20
+tmax <- 70
 state.matrix <-  matrix(0,cons.bs,tmax)
 
 #Define critical threshold for consumer
@@ -47,14 +52,14 @@ for (i in xc:cons.bs) {
 #Single value patchiness
 hab.het <- rep(0,num.res)
 
-hab.het <- rep(1,num.res)
+#hab.het <- rep(1,num.res)
 
 #Body size dependent patchiness
 #Small animals are uniform; Large animals are patchy
-hab.het <- seq(0,1,length.out=num.res)
+#hab.het <- seq(0,1,length.out=num.res)
 
 #Small animals are patchy; Large animals are uniform
-hab.het <- seq(1,0,length.out=num.res)
+#hab.het <- seq(1,0,length.out=num.res)
 
 
 
@@ -345,7 +350,7 @@ istar.nr <- cout[[2]]
 
 #Time-invariant analysis
 
-time.stamp <- 19
+time.stamp <- 69
 istar.node <- do.call(cbind,lapply(istar.nr,function(x){x[,time.stamp]}))
 #Eliminate the <xc rows
 istar.node <- istar.node[-seq(1,xc-1,1),]
@@ -401,6 +406,6 @@ plot(D12,type="l")
 
 #Plotting Fitness values
 r <- 5
-plot(W.nr[[r]][1,],type="l",ylim=c(0,1.5))
+plot(W.nr[[r]][1,],type="l",ylim=c(0,3))
 for (i in 2:20) {lines(W.nr[[r]][i,])}
 
