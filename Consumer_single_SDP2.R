@@ -26,7 +26,7 @@ res.bs <- round(seq(1,max.res.bs,length.out=num.res),0)
 #Define consumer body mass
 cons.bs <- 20
 
-#Define state matrices for consumer
+#Define state matrices for consumer...
 tmax <- 70
 state.matrix <-  matrix(0,cons.bs,tmax)
 
@@ -350,7 +350,7 @@ istar.nr <- cout[[2]]
 
 #Time-invariant analysis
 
-time.stamp <- 1
+time.stamp <- 69
 istar.node <- do.call(cbind,lapply(istar.nr,function(x){x[,time.stamp]}))
 #Eliminate the <xc rows
 istar.node <- istar.node[-seq(1,xc-1,1),]
