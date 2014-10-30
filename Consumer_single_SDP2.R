@@ -50,9 +50,9 @@ for (i in xc:cons.bs) {
 #seq(0,1):: 0 is an even landscape, 1 is a patchy landscape
 
 #Single value patchiness
-hab.het <- rep(0,num.res)
+#hab.het <- rep(0,num.res)
 
-#hab.het <- rep(1,num.res)
+hab.het <- rep(1,num.res)
 
 #Body size dependent patchiness
 #Small animals are uniform; Large animals are patchy
@@ -350,7 +350,7 @@ istar.nr <- cout[[2]]
 
 #Time-invariant analysis
 
-time.stamp <- 69
+time.stamp <- 1
 istar.node <- do.call(cbind,lapply(istar.nr,function(x){x[,time.stamp]}))
 #Eliminate the <xc rows
 istar.node <- istar.node[-seq(1,xc-1,1),]
@@ -375,10 +375,21 @@ istarhab0 <- istar.node
 save.image("Hab0.RData")
 write.table(istarhab0,"istarhab0.csv",col.names=FALSE,row.names=FALSE,sep=",")
 
+istarhab0t1 <- istar.node
+write.table(istarhab0t1,"istarhab0t1.csv",col.names=FALSE,row.names=FALSE,sep=",")
+
+
+
 #Patchy Habitat
 istarhab1 <- istar.node
 save.image("Hab1.RData")
 write.table(istarhab1,"istarhab1.csv",col.names=FALSE,row.names=FALSE,sep=",")
+
+istarhab1t1 <- istar.node
+write.table(istarhab1t1,"istarhab1t1.csv",col.names=FALSE,row.names=FALSE,sep=",")
+
+
+
 
 #Patchines increasing with body size
 istarhab_inc <- istar.node
@@ -401,7 +412,9 @@ for (t in 1:(tmax-2)) {
   D2 <- do.call(cbind,lapply(istar.nr,function(x){x[,t+1]}))
   D12[t] <- sqrt(sum((D1 - D2)^2))
 }
-plot(D12,type="l")
+pdf("/Users/justinyeakel/Dropbox/PostDoc/2014_Foodweb_SDP/Manuscript/Figure_stationarity.pdf", width=7, height=4)
+plot(D12,type="l",ylab="Matrix Diff (t[y] - t[y-1])",xlab="t")
+dev.off()
 
 
 #Plotting Fitness values
