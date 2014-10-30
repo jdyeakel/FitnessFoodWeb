@@ -25,25 +25,25 @@ NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N,
    //Record the state vector for each individual
    //This records the state of each individual... values will change over time
    IntegerVector state_v(N);
-   for (i=0; i<N; i++) {
+   for (int i=0; i<N; i++) {
      state_v(i) = xmax; //The initial state is full health
    }
    //Record the time vector for each individual
    IntegerVector time_v(N);
-   for (i=0; i<N; i++) {
+   for (int i=0; i<N; i++) {
      time_v(i) = 1; //The intitial time is 1 of course
    }
    //Record the current resource for each individual
    IntegerVector res_v(N);
    NumericVector rdraw_v = runif(N);
-   for (i=0; i<N; i++) {
+   for (int i=0; i<N; i++) {
     double rdraw = as<double>(rdraw_v(i));
     res_v(i) = (int) floor(rdraw*(num_res)); //The initial resource is randomly drawn for each individual
    }
    
    //What are the optimal decisions for the current individual-level states?
    IntegerVector dec_v(N);
-   for (i=0; i<N; i++) {
+   for (int i=0; i<N; i++) {
      istar_t = istar_nr(res_v(i)); //Grab the istar for the focal resource
      dec_v(i) = istar_t(state_v(i),0); //Grab the decision for a given state and time t=0;
    }
@@ -51,10 +51,10 @@ NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N,
    
    
    //Begin time iteration (this is the simulation time)
-   for (t=0; t<tsim; t++) {
+   for (int t=0; t<tsim; t++) {
      
      //Begin Individual iterations
-     for (n=0; n<N; n++) {
+     for (int n=0; n<N; n++) {
        
        //Define states for the individual
        int ind_x = state_v(n);
@@ -62,28 +62,80 @@ NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N,
        int ind_r = res_v(n);
        int ind_d = dec_v(n);
        
+       //REPRODUCTION
+       //Does the individual reproduce in this timestep?
+       rep_prob = 
+       NumericVector rdraw_v = runif(1);
+       double rdraw = as<double>(rdraw_v);
+       if (rdraw < rep_gain(ind_x - 1)) { //Subtract one because we're using it as an index
+         int rep.success = 1;
+       } else {
+         int rep.success = 0;
+       }
+       
        //Choose next resource as a function of the preference probability distribution
        NumericMatrix pref_prob_m = dec_ls(ind_r);
        NumericVector pref_prob(num_res);
        IntegerVector num_prob(num_res);
-       for (i=0;i<num_res; i++) {
+       for (int i=0;i<num_res; i++) {
          pref_prob(i) = pref_prob_m(i,ind_d);
-         num_prob(i) = floor(pref_prob(i)*1000);
+         pref_num(i) = floor(pref_prob(i)*1000) + 1;
        } 
-       int tot_num = sum(num_prob);
+       int tot_num = sum(pref_num);
+       IntegerVector p_bin(tot_num);
+       int tic = 0;
+       for (int i=0; i<num_res; i++) {
+         int num = pref_num(i);
+         for (int j=0; j<num; j++) {
+           p_bin(tic) = i;
+           tic = tic + 1;
+         }
+       }
+       NumericVector rdraw_v = runif(1);
+       double rdraw = as<double>(rdraw_v);
+       int draw = (int) floor(rdraw*(tot_num));
+       //This defines the next resource
+       int res_next = p_bin(draw);
+       
+       //How many of this resource is found?
+       NumericVector k_prob(max_enc);
+       for (int i=0; i<max_enc; i++) {
+         k_prob(i) = f_m(i,res_next);
+         k_num(i) = floor(k_prob(i)*1000) + 1;
+       }
+       int tot_num = sum(k_num);
        IntegerVector k_bin(tot_num);
        int tic = 0;
-       for (i=0; i<num_res; i++) {
-         int num_k = num_prob(i);
-         for (j=0; j<num_k; j++) {
+       for (int i=0; i<max_enc; i++) {
+         int num = k_num(i);
+         for (int j=0; j<num; j++) {
            k_bin(tic) = i;
            tic = tic + 1;
          }
        }
        NumericVector rdraw_v = runif(1);
-       double rdraw = as<double>(rdraw_v;
-       int draw = (int) floor(rdraw*(tot_num));
+       double rdraw = as<double>(rdraw_v);
+       int draw = (int) floor(rdraw*tot_num);
+       //This defines the amount of the next resource
        int k = k_bin(draw);
+       
+       //What is the probability of catching the resource: rho_vec(k)
+       double rho = rho_vec(k);
+       //Is the prey capture successfull?
+       NumericVector rdraw_v = runif(1);
+       double rdraw = as<double>(rdraw_v);
+       if (rdraw < rho) {
+         int success = 1;
+       } else {
+         int success = 0;
+       }
+       
+       
+       //Energetic dynamics
+       int x_next
+       
+       
+       
        
        
        
