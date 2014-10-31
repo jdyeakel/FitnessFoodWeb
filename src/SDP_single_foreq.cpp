@@ -4,12 +4,13 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 List SDP_single_foreq(int tmax, NumericVector res_bs, int cons_bs, int xc, NumericVector rep_gain, 
 NumericMatrix f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, NumericMatrix c_learn, 
-NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N, int tsim) {
+NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N, int tsim, double eta) {
    
    //Note:
    //Here, state variables are in standard format
    //To use a state variable X as an INDEX, it must be an INTEGER, and X=X-1
-   
+   xc = xc -1; //Index
+   double xc_state = (double) xc; //state
    
    
    //Establish iniital variables required for the SDP
@@ -130,14 +131,34 @@ NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N,
        NumericVector rdraw_v = runif(1);
        double rdraw = as<double>(rdraw_v);
        if (rdraw < rho) {
-         int success = 1;
+         int forage_success = 1;
        } else {
-         int success = 0;
+         int forage_success = 0;
        }
        
        
        //Energetic dynamics
-       int x_next
+       if (forage_success == 1) {
+         int x_next = ind_x + eta*g_forage(res_next) - c_forage(res_next);
+       } else {
+         int x_next = ind_x - c_forage(res_next);
+       }
+       
+       //Turn x_next into nearest integer
+       int x_next_rd = round(x_next);
+       
+       //Boundary conditions and determine whether individual dies
+       if (x_next_rd < xc_state) {
+         x_next_rd = 0;
+         int death = 1;
+       }
+       if (x_next_rd > xmax) {
+         x_next_rd = xmax;
+         int death = 0;
+       }
+       
+       
+       
        
        
        
