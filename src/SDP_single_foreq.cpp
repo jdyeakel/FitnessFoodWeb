@@ -1,16 +1,16 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-// Below is a simple example of exporting a C++ function to R. You can
-// source this function into an R session using the Rcpp::sourceCpp 
-// function (or via the Source button on the editor toolbar)
-
-// For more on using Rcpp click the Help button on the editor toolbar
-
 // [[Rcpp::export]]
 List SDP_single_foreq(int tmax, NumericVector res_bs, int cons_bs, int xc, NumericVector rep_gain, 
 NumericMatrix f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, NumericMatrix c_learn, 
 NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N, int tsim) {
+   
+   //Note:
+   //Here, state variables are in standard format
+   //To use a state variable X as an INDEX, it must be an INTEGER, and X=X-1
+   
+   
    
    //Establish iniital variables required for the SDP
    int num_res = res_bs.size();
@@ -23,16 +23,19 @@ NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N,
    
    //Initialize the record-keeping of states
    //Record the state vector for each individual
-   //This records the state of each individual... values will change over time
+   
+   //This records the energetic state of each individual... values will change over time
    IntegerVector state_v(N);
    for (int i=0; i<N; i++) {
      state_v(i) = xmax; //The initial state is full health
    }
+   
    //Record the time vector for each individual
    IntegerVector time_v(N);
    for (int i=0; i<N; i++) {
      time_v(i) = 1; //The intitial time is 1 of course
    }
+   
    //Record the current resource for each individual
    IntegerVector res_v(N);
    NumericVector rdraw_v = runif(N);
@@ -63,11 +66,12 @@ NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N,
        int ind_d = dec_v(n);
        
        //REPRODUCTION
+       //What is the probability that the individual will reproduce?
+       rep_prob = rep_gain(ind_x);
        //Does the individual reproduce in this timestep?
-       rep_prob = 
        NumericVector rdraw_v = runif(1);
        double rdraw = as<double>(rdraw_v);
-       if (rdraw < rep_gain(ind_x - 1)) { //Subtract one because we're using it as an index
+       if (rdraw < rep_prob) {
          int rep.success = 1;
        } else {
          int rep.success = 0;
@@ -79,7 +83,7 @@ NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N,
        IntegerVector num_prob(num_res);
        for (int i=0;i<num_res; i++) {
          pref_prob(i) = pref_prob_m(i,ind_d);
-         pref_num(i) = floor(pref_prob(i)*1000) + 1;
+         pref_num(i) = floor(pref_prob(i)*1000) + 1; //+1 to ensure no zeros
        } 
        int tot_num = sum(pref_num);
        IntegerVector p_bin(tot_num);
@@ -93,15 +97,16 @@ NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N,
        }
        NumericVector rdraw_v = runif(1);
        double rdraw = as<double>(rdraw_v);
+       //Random draw between 0 and tot_num
        int draw = (int) floor(rdraw*(tot_num));
-       //This defines the next resource
+       //This defines the next resource (the index for the next resource)
        int res_next = p_bin(draw);
        
        //How many of this resource is found?
        NumericVector k_prob(max_enc);
        for (int i=0; i<max_enc; i++) {
          k_prob(i) = f_m(i,res_next);
-         k_num(i) = floor(k_prob(i)*1000) + 1;
+         k_num(i) = floor(k_prob(i)*1000) + 1; //+1 to ensure no zeros
        }
        int tot_num = sum(k_num);
        IntegerVector k_bin(tot_num);
