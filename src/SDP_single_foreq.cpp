@@ -25,6 +25,9 @@ NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N,
    //Initialize the record-keeping of states
    //Record the state vector for each individual
    
+   //Which of these individuals are alive (they all start out alive)
+   IntegerVector alive(N);
+   
    //This records the energetic state of each individual... values will change over time
    IntegerVector state_v(N);
    for (int i=0; i<N; i++) {
@@ -57,7 +60,11 @@ NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N,
    //Begin time iteration (this is the simulation time)
    for (int t=0; t<tsim; t++) {
      
-     //Begin Individual iterations
+     //Reset metrics
+     //How many individuals are currently alive?
+     int N = sum(alive);
+     
+     //Begin Individual iterations... Note: N will change with each t
      for (int n=0; n<N; n++) {
        
        //Define states for the individual
@@ -150,11 +157,11 @@ NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N,
        //Boundary conditions and determine whether individual dies
        if (x_next_rd < xc_state) {
          x_next_rd = 0;
-         int death = 1;
+         alive(n) = 0;
        }
        if (x_next_rd > xmax) {
          x_next_rd = xmax;
-         int death = 0;
+         alive(n) = 1;
        }
        
        
