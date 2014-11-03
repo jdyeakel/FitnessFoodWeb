@@ -55,7 +55,7 @@ NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N,
    //What are the optimal decisions for the current individual-level states?
    IntegerVector dec_v(N);
    for (int i=0; i<N; i++) {
-     istar_t = istar_nr(res_v(i)); //Grab the istar for the focal resource
+     IntegerMatrix istar_t = istar_nr(res_v(i)); //Grab the istar for the focal resource
      dec_v(i) = istar_t(state_v(i),time_v(i)); //Grab the decision for a given state and time t=0;
    }
    
@@ -190,27 +190,37 @@ NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N,
        
      } //end individual iterations
      
+     int num_alive = sum(alive);
+     
      //Density-dependent Reproduction :: TODO
      //Must add on new individuals to the current state vectors
      
      //The number of new individuals
      int num_recruits = XXXX;
-     //Total individual count
-     new_N = N + num_recruits;
+     //Total individual count = surviving individuals + recruits
+     new_N = num_alive + num_recruits;
      //Add on new individuals
      IntegerVector new_alive(new_N);
      IntegerVector new_state_v(new_N);
      IntegerVector new_res_v(new_N);
      IntegerVector new_dec_v(new_N);
      IntegerVector new_time_v(new_N);
-     //Transcribe over old values
-     for (int i=0; i<N; i++) {
-       new_alive(i) = alive(i);
-       new_state_v(i) = state_v(i);
-       new_res_v(i) = res_v(i);
-       new_dec_v(i) = dec_v(i);
-       new_time_v(i) = time_v(i);
+     
+     //Transcribe over values for states at NEXT time interval
+     int tic = 0;
+     for (int i=0; i<num_alive; i++) {
+       //only do this for living individuals
+       if (alive(i) == 1) {
+         new_alive(tic) = alive(i);
+         new_state_v(tic) = x_next_rd(i);
+         new_res_v(tic) = res_next(i);
+         IntegerMatrix istar_t = istar_nr(new_res_v(i)); //Grab the istar for the focal resource
+         new_dec_v(tic) = istar_t(new_state_v(i),time_v(i));
+         new_time_v(tic) = time_v(i) + 1;
+         tic = tic + 1;
+       }
      }
+     //Initiate new values for recruits
      NumericVector rdraw_v = runif(num_recruits);
      int tic = 0;
      for (int i=N; i<new_N; i++) {
@@ -220,7 +230,7 @@ NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N,
        //Randomly draw initial resource
        double rdraw = as<double>(rdraw_v(tic)); 
        new_res_v(i) = (int) floor(rdraw*(num_res));
-       istar_t = istar_nr(new_res_v(i)); //Grab the istar for the focal resource
+       IntegerMatrix istar_t = istar_nr(new_res_v(i)); //Grab the istar for the focal resource
        new_dec_v(i) = istar_t(new_state_v(i),time_v(i)); //Grab the decision for a given state and time t=0;
        int tic = tic + 1;
      }
@@ -234,27 +244,6 @@ NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N,
      IntegerVector res_v(num_alive);
      IntegerVector dec_v(num_alive);
      
-     int tic = 0;
-     for (i=0; i<N; i++) {
-       if (alive(tic) == 1) {
-
-         //Updating states for next t iteration
-         //This records the energetic state of each individual... values will change over time
-         state_v(tic) = x_next_rd(n);
-         
-         //Record the time vector for each individual
-         time_v(tic) = 1; //The intitial time is 1 of course
-         
-         //Record the next resource for each individual
-         res_v(tic) = res_next(i); //The initial resource is randomly drawn for each individual
-         
-         //What are the optimal decisions for the current individual-level states?
-         istar_t = istar_nr(res_v(tic)); //Grab the istar for the focal resource
-         dec_v(tic) = istar_t(state_v(i),0); //Grab the decision for a given state and time t=0;
-         
-         int tic = tic + 1;
-       } //end if-alive statement
-     } //end i
      
      
    } //end time iterations
