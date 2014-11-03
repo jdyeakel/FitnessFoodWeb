@@ -41,7 +41,7 @@ NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N,
    //Record the time vector for each individual
    IntegerVector time_v(N);
    for (int i=0; i<N; i++) {
-     time_v(i) = 1; //The intitial time is 1 of course
+     time_v(i) = 0; //The intitial time is 0 (first index) of course
    }
    
    //Record the current resource for each individual
@@ -56,7 +56,7 @@ NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N,
    IntegerVector dec_v(N);
    for (int i=0; i<N; i++) {
      istar_t = istar_nr(res_v(i)); //Grab the istar for the focal resource
-     dec_v(i) = istar_t(state_v(i),0); //Grab the decision for a given state and time t=0;
+     dec_v(i) = istar_t(state_v(i),time_v(i)); //Grab the decision for a given state and time t=0;
    }
    
    
@@ -77,6 +77,9 @@ NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N,
      
      //To save the 'next' resouce consumed
      IntegerVector res_next(N);
+     
+     //To save the 'next' values for the time vector
+     IntegerVector t_next(N);
      
      //Begin Individual iterations... Note: N will change with each t
      for (int n=0; n<N; n++) {
@@ -182,6 +185,9 @@ NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N,
          alive(n) = 1;
        }
        
+       //Next individual time integer
+       t_next(n) = time_v(n) + 1;
+       
      } //end individual iterations
      
      //Density-dependent Reproduction :: TODO
@@ -204,7 +210,7 @@ NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N,
 
          //Updating states for next t iteration
          //This records the energetic state of each individual... values will change over time
-         state_v(tic) = xmax; //The initial state is full health
+         state_v(tic) = x_next_rd(n);
          
          //Record the time vector for each individual
          time_v(tic) = 1; //The intitial time is 1 of course
