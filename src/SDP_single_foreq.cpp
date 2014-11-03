@@ -193,10 +193,40 @@ NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N,
      //Density-dependent Reproduction :: TODO
      //Must add on new individuals to the current state vectors
      
-     
+     //The number of new individuals
+     int num_recruits = XXXX;
+     //Total individual count
+     new_N = N + num_recruits;
+     //Add on new individuals
+     IntegerVector new_alive(new_N);
+     IntegerVector new_state_v(new_N);
+     IntegerVector new_res_v(new_N);
+     IntegerVector new_dec_v(new_N);
+     IntegerVector new_time_v(new_N);
+     //Transcribe over old values
+     for (int i=0; i<N; i++) {
+       new_alive(i) = alive(i);
+       new_state_v(i) = state_v(i);
+       new_res_v(i) = res_v(i);
+       new_dec_v(i) = dec_v(i);
+       new_time_v(i) = time_v(i);
+     }
+     NumericVector rdraw_v = runif(num_recruits);
+     int tic = 0;
+     for (int i=N; i<new_N; i++) {
+       new_alive(i) = 1; //Recruits are all alive
+       new_state_v(i) = xmax; //Initial energetic state is xmax
+       new_time_v(i) = 0; //Initial time state is 0;
+       //Randomly draw initial resource
+       double rdraw = as<double>(rdraw_v(tic)); 
+       new_res_v(i) = (int) floor(rdraw*(num_res));
+       istar_t = istar_nr(new_res_v(i)); //Grab the istar for the focal resource
+       new_dec_v(i) = istar_t(new_state_v(i),time_v(i)); //Grab the decision for a given state and time t=0;
+       int tic = tic + 1;
+     }
      
      //How many individuals survive this timestep?
-     int num_alive = sum(alive);
+     int num_alive = sum(new_alive);
      
      //Redefine states only for alive individuals
      IntegerVector state_v(num_alive);
