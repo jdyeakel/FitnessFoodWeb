@@ -50,9 +50,9 @@ for (i in xc:cons.bs) {
 #seq(0,1):: 0 is an even landscape, 1 is a patchy landscape
 
 #Single value patchiness
-#hab.het <- rep(0,num.res)
+hab.het <- rep(0,num.res)
 
-hab.het <- rep(1,num.res)
+#hab.het <- rep(1,num.res)
 
 #Body size dependent patchiness
 #Small animals are uniform; Large animals are patchy
