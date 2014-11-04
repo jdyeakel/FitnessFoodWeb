@@ -61,7 +61,6 @@ double alpha, double beta, double comp) {
    }
    
    
-   
    //Begin time iteration (this is the simulation time)
    for (int t=0; t<tsim; t++) {
      
@@ -85,14 +84,18 @@ double alpha, double beta, double comp) {
      //To save the 'next' values for the time vector
      IntegerVector t_next(N);
      
-     
+     NumericVector rdraw_stochmort_v = runif(N);
      //Begin Individual iterations... Note: N will change with each t
      for (int n=0; n<N; n++) {
        
        //Define states for the individual
+       //Current energetic state
        int ind_x = state_v(n);
+       //Current temporal state
        int ind_t = time_v(n);
+       //Current (focal) resource
        int ind_r = res_v(n);
+       //Decision matrix associated with current resource
        int ind_d = dec_v(n);
        
        //REPRODUCTION
@@ -110,84 +113,108 @@ double alpha, double beta, double comp) {
          SSB_v(n) = 0;
        }
        
-       
-       //Choose next resource as a function of the preference probability distribution
-       NumericMatrix pref_prob_m = dec_ls(ind_r);
-       NumericVector pref_prob(num_res);
-       IntegerVector num_prob(num_res);
-       for (int i=0;i<num_res; i++) {
-         pref_prob(i) = pref_prob_m(i,ind_d);
-         pref_num(i) = floor(pref_prob(i)*1000) + 1; //+1 to ensure no zeros
-       } 
-       int tot_num = sum(pref_num);
-       IntegerVector p_bin(tot_num);
-       int tic = 0;
-       for (int i=0; i<num_res; i++) {
-         int num = pref_num(i);
-         for (int j=0; j<num; j++) {
-           p_bin(tic) = i;
-           tic = tic + 1;
-         }
-       }
-       NumericVector rdraw_v = runif(1);
-       double rdraw = as<double>(rdraw_v);
-       //Random draw between 0 and tot_num
-       int draw = (int) floor(rdraw*(tot_num));
-       //This defines the next resource (the index for the next resource)
-       res_next(n) = p_bin(draw);
-       
-       //How many of this resource is found?
-       NumericVector k_prob(max_enc);
-       for (int i=0; i<max_enc; i++) {
-         k_prob(i) = f_m(i,res_next);
-         k_num(i) = floor(k_prob(i)*1000) + 1; //+1 to ensure no zeros
-       }
-       int tot_num = sum(k_num);
-       IntegerVector k_bin(tot_num);
-       int tic = 0;
-       for (int i=0; i<max_enc; i++) {
-         int num = k_num(i);
-         for (int j=0; j<num; j++) {
-           k_bin(tic) = i;
-           tic = tic + 1;
-         }
-       }
-       NumericVector rdraw_v = runif(1);
-       double rdraw = as<double>(rdraw_v);
-       int draw = (int) floor(rdraw*tot_num);
-       //This defines the amount of the next resource
-       int k = k_bin(draw);
-       
-       //What is the probability of catching the resource: rho_vec(k)
-       double rho = rho_vec(k);
-       
-       //Is the prey capture successfull?
-       //Energetic dynamics
-       NumericVector rdraw_v = runif(1);
-       int x_next;
-       double rdraw = as<double>(rdraw_v);
-       if (rdraw < rho) {
-         //If food is captured
-         x_next = ind_x + eta*g_forage(res_next) - c_forage(res_next);
+       //Stochastic mortality
+       double pr_stochmort = mort(ind_r);
+       double rdraw_stochmort = as<double>(rdraw_stochmort_v(n));
+       int stochmort;
+       if (rdraw_stochmort < pr_stochmort) {
+         //Individual dies
+         stochmort = 1;
        } else {
-         //If food is not captured
-         x_next = ind_x - c_forage(res_next);
+         //Individual survives
+         stochmort = 0;
        }
        
-       //Turn x_next into nearest integer
-       x_next_rd(n) = round(x_next);
+       //The following steps are only relevant for surviving individuals
        
-       //Boundary conditions and determine whether individual dies
-       if (x_next_rd < xc_state) {
+       if (stochmort == 0) {
+         
+         //Choose next resource as a function of the preference probability distribution
+         NumericMatrix pref_prob_m = dec_ls(ind_r);
+         NumericVector pref_prob(num_res);
+         IntegerVector num_prob(num_res);
+         for (int i=0;i<num_res; i++) {
+           pref_prob(i) = pref_prob_m(i,ind_d);
+           pref_num(i) = floor(pref_prob(i)*1000) + 1; //+1 to ensure no zeros
+         } 
+         int tot_num = sum(pref_num);
+         IntegerVector p_bin(tot_num);
+         int tic = 0;
+         for (int i=0; i<num_res; i++) {
+           int num = pref_num(i);
+           for (int j=0; j<num; j++) {
+             p_bin(tic) = i;
+             tic = tic + 1;
+           }
+         }
+         NumericVector rdraw_v = runif(1);
+         double rdraw = as<double>(rdraw_v);
+         //Random draw between 0 and tot_num
+         int draw = (int) floor(rdraw*(tot_num));
+         //This defines the next resource (the index for the next resource)
+         res_next(n) = p_bin(draw);
+         
+         //How many of this resource is found?
+         NumericVector k_prob(max_enc);
+         for (int i=0; i<max_enc; i++) {
+           k_prob(i) = f_m(i,res_next);
+           k_num(i) = floor(k_prob(i)*1000) + 1; //+1 to ensure no zeros
+         }
+         int tot_num = sum(k_num);
+         IntegerVector k_bin(tot_num);
+         int tic = 0;
+         for (int i=0; i<max_enc; i++) {
+           int num = k_num(i);
+           for (int j=0; j<num; j++) {
+             k_bin(tic) = i;
+             tic = tic + 1;
+           }
+         }
+         NumericVector rdraw_v = runif(1);
+         double rdraw = as<double>(rdraw_v);
+         int draw = (int) floor(rdraw*tot_num);
+         //This defines the amount of the next resource
+         int k = k_bin(draw);
+         
+         //What is the probability of catching the resource: rho_vec(k)
+         double rho = rho_vec(k);
+         
+         //Is the prey capture successfull?
+         //Energetic dynamics
+         NumericVector rdraw_v = runif(1);
+         int x_next;
+         double rdraw = as<double>(rdraw_v);
+         if (rdraw < rho) {
+           //If food is captured
+           x_next = ind_x + eta*g_forage(res_next) - c_forage(res_next);
+         } else {
+           //If food is not captured
+           x_next = ind_x - c_forage(res_next);
+         }
+         
+         //Turn x_next into nearest integer
+         x_next_rd(n) = round(x_next);
+         
+         //Boundary conditions and determine whether individual dies
+         if (x_next_rd < xc_state) {
+           x_next_rd(n) = 0;
+           alive(n) = 0;
+         }
+         if (x_next_rd > xmax) {
+           x_next_rd(n) = xmax;
+           alive(n) = 1;
+         }
+         
+         //If individual suffers stochastic mortality
+       } else { 
+         
          x_next_rd(n) = 0;
          alive(n) = 0;
-       }
-       if (x_next_rd > xmax) {
-         x_next_rd(n) = xmax;
-         alive(n) = 1;
-       }
+         
+       } //end stochmort if statement
        
        //Next individual time integer
+       //Shouldn't matter if we advance time for dead individuals. Culling occurs later
        t_next(n) = time_v(n) + 1;
        
        
@@ -249,12 +276,10 @@ double alpha, double beta, double comp) {
      int num_alive = sum(new_alive);
      
      //Redefine states only for alive individuals
-     IntegerVector state_v(num_alive);
-     IntegerVector time_v(num_alive);
-     IntegerVector res_v(num_alive);
-     IntegerVector dec_v(num_alive);
-     
-     
+     IntegerVector state_v = new_state_v;
+     IntegerVector time_v = new_time_v;
+     IntegerVector res_v = new_res_v;
+     IntegerVector dec_v = new_dec_v;
      
    } //end time iterations
    
