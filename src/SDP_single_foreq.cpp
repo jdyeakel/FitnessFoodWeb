@@ -101,18 +101,18 @@ double alpha, double beta, double comp) {
      for (int n=0; n<N; n++) {
        
        //Define states for the individual
-       //Current energetic state
+       //Current energetic state (state)
        int ind_x = state_v(n);
-       //Current temporal state
+       //Current temporal state (state)
        int ind_t = time_v(n);
-       //Current (focal) resource
+       //Current (focal) resource (index)
        int ind_r = res_v(n);
-       //Decision matrix associated with current resource
+       //Decision matrix associated with current resource (state)
        int ind_d = dec_v(n);
        
        //REPRODUCTION
        //What is the probability that the individual will reproduce?
-       rep_prob = rep_gain(ind_x);
+       rep_prob = rep_gain(ind_x-1);
        //Does the individual reproduce in this timestep?
        //Take care of reproduction after n iterations... to include density dependence
        NumericVector rdraw_v = runif(1);
@@ -126,7 +126,7 @@ double alpha, double beta, double comp) {
        }
        
        //Stochastic mortality
-       double pr_stochmort = mort(ind_r);
+       double pr_stochmort = mort(ind_r); //ind_r is index already
        double rdraw_stochmort = as<double>(rdraw_stochmort_v(n));
        int stochmort;
        if (rdraw_stochmort < pr_stochmort) {
@@ -142,14 +142,17 @@ double alpha, double beta, double comp) {
        if (stochmort == 0) {
          
          //Choose next resource as a function of the preference probability distribution
-         NumericMatrix pref_prob_m = dec_ls(ind_r);
+         NumericMatrix pref_prob_m = dec_ls(ind_r); //ind_r is index already
          NumericVector pref_prob(num_res);
          IntegerVector num_prob(num_res);
          for (int i=0;i<num_res; i++) {
-           pref_prob(i) = pref_prob_m(i,ind_d);
+           pref_prob(i) = pref_prob_m(i,ind_d-1);
+           //The number of each 'resource index' to choose across
+           //Zeros will screw this up
            pref_num(i) = floor(pref_prob(i)*1000) + 1; //+1 to ensure no zeros
          } 
          int tot_num = sum(pref_num);
+         //The p_bin starts at 0 and ends at num_res-1... so it is already an index
          IntegerVector p_bin(tot_num);
          int tic = 0;
          for (int i=0; i<num_res; i++) {
@@ -161,21 +164,25 @@ double alpha, double beta, double comp) {
          }
          NumericVector rdraw_v = runif(1);
          double rdraw = as<double>(rdraw_v);
-         //Random draw between 0 and tot_num
+         //Random draw between 0 and tot_num...
          int draw = (int) floor(rdraw*(tot_num));
          //This defines the next resource (the index for the next resource)
+         //NOTE: this is an index, as it has been for res
          res_next(n) = p_bin(draw);
          
          //How many of this resource is found?
-         NumericVector k_prob(max_enc);
-         for (int i=0; i<max_enc; i++) {
-           k_prob(i) = f_m(i,res_next);
+         NumericVector k_prob(max_enc+1);
+         for (int i=0; i<(max_enc+1); i++) { //there are max_enc+1 indices
+           k_prob(i) = f_m(i,res_next); //res_next is already an index
+           //Zeros will screw this up
            k_num(i) = floor(k_prob(i)*1000) + 1; //+1 to ensure no zeros
          }
          int tot_num = sum(k_num);
          IntegerVector k_bin(tot_num);
          int tic = 0;
-         for (int i=0; i<max_enc; i++) {
+         //These k values are not 'k', but the k index
+         //This index will grab the appropriate value in the rho vector
+         for (int i=0; i<(max_enc+1); i++) {
            int num = k_num(i);
            for (int j=0; j<num; j++) {
              k_bin(tic) = i;
@@ -185,7 +192,7 @@ double alpha, double beta, double comp) {
          NumericVector rdraw_v = runif(1);
          double rdraw = as<double>(rdraw_v);
          int draw = (int) floor(rdraw*tot_num);
-         //This defines the amount of the next resource
+         //This defines the index for the resource amt / rho
          int k = k_bin(draw);
          
          //What is the probability of catching the resource: rho_vec(k)
@@ -194,18 +201,19 @@ double alpha, double beta, double comp) {
          //Is the prey capture successfull?
          //Energetic dynamics
          NumericVector rdraw_v = runif(1);
-         int x_next;
+         double x_next; //state
+         double d_ind_x = (double) ind_x; //double current state
          double rdraw = as<double>(rdraw_v);
          if (rdraw < rho) {
-           //If food is captured
-           x_next = ind_x + eta*g_forage(res_next) - c_forage(res_next);
+           //If food is captured (res_next is an index)
+           x_next = d_ind_x + eta*g_forage(res_next) - c_forage(res_next);
          } else {
            //If food is not captured
-           x_next = ind_x - c_forage(res_next);
+           x_next = d_ind_x - c_forage(res_next);
          }
          
-         //Turn x_next into nearest integer
-         x_next_rd(n) = round(x_next);
+         //Turn state x_next into nearest integer
+         x_next_rd(n) = (int) round(x_next);
          
          //Boundary conditions and determine whether individual dies
          if (x_next_rd < xc_state) {
@@ -261,11 +269,11 @@ double alpha, double beta, double comp) {
        //only do this for living individuals
        if (alive(i) == 1) {
          new_alive(tic) = alive(i);
-         new_state_v(tic) = x_next_rd(i);
-         new_res_v(tic) = res_next(i);
-         IntegerMatrix istar_t = istar_nr(new_res_v(i)); //Grab the istar for the focal resource
-         new_dec_v(tic) = istar_t(new_state_v(i),time_v(i));
-         new_time_v(tic) = time_v(i) + 1;
+         new_state_v(tic) = x_next_rd(i); //state
+         new_res_v(tic) = res_next(i); //index
+         new_time_v(tic) = time_v(i) + 1; //advance time interval
+         IntegerMatrix istar_t = istar_nr(new_res_v(tic)); //Grab the istar for the focal resource
+         new_dec_v(tic) = istar_t(new_state_v(tic)-1,new_time_v(tic)-1);
          tic = tic + 1;
        }
      }
