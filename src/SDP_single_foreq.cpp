@@ -25,6 +25,10 @@ double alpha, double beta, double comp) {
    //This is a state, not an index, so should equal cons_bs
    double xmax = (double) cons_bs;
    
+   //Vectors for output
+   IntegerVector pop_size(tsim);
+   //OTHERS
+   
    //Number of starting individuals
    int N = N_init;
    
@@ -70,9 +74,12 @@ double alpha, double beta, double comp) {
      dec_v(i) = istar_t(state_v(i)-1,time_v(i)-1); //Grab the decision for a given state and time t=0;
    }
    
+   //Record initial pop size
+   pop_size(0) = num_alive;
    
    //Begin time iteration (this is the simulation time)
-   for (int t=0; t<tsim; t++) {
+   //Sim time iterations stop at tsim - 1
+   for (int t=0; t<(tsim-1); t++) {
      
      //Book-keeping
      //Reset metrics (first iteration will be repetitive, but oh well)
@@ -265,8 +272,8 @@ double alpha, double beta, double comp) {
      
      //Transcribe over values for states at NEXT time interval
      int tic = 0;
-     for (int i=0; i<num_alive; i++) {
-       //only do this for living individuals
+     for (int i=0; i<N; i++) {
+       //only do this for surviving individuals
        if (alive(i) == 1) {
          new_alive(tic) = alive(i);
          new_state_v(tic) = x_next_rd(i); //state
@@ -279,20 +286,21 @@ double alpha, double beta, double comp) {
      }
      //Initiate new values for recruits
      NumericVector rdraw_v = runif(num_recruits);
-     int tic = 0;
-     for (int i=N; i<new_N; i++) {
+     int tic = 0; //just for the rdraw_v index
+     for (int i=num_alive; i<new_N; i++) {
        new_alive(i) = 1; //Recruits are all alive
        new_state_v(i) = xmax; //Initial energetic state is xmax
-       new_time_v(i) = 0; //Initial time state is 0;
+       new_time_v(i) = 1;
        //Randomly draw initial resource
        double rdraw = as<double>(rdraw_v(tic)); 
        new_res_v(i) = (int) floor(rdraw*(num_res));
        IntegerMatrix istar_t = istar_nr(new_res_v(i)); //Grab the istar for the focal resource
-       new_dec_v(i) = istar_t(new_state_v(i),new_time_v(i)); //Grab the decision for a given state and time t=0;
+       new_dec_v(i) = istar_t(new_state_v(i)-1,new_time_v(i)-1); //Grab the decision for a given state and time t=0;
        int tic = tic + 1;
      }
      
-     //How many individuals survive this timestep?
+     //RESET
+     //How many individuals are there?
      int num_alive = sum(new_alive);
      
      //Redefine states only for alive individuals
@@ -301,6 +309,19 @@ double alpha, double beta, double comp) {
      IntegerVector res_v = new_res_v;
      IntegerVector dec_v = new_dec_v;
      
-   } //end time iterations
+     //EXPORT
+     //Save variables
+     pop_size(t+1) = num_alive;
+     //Other import metrics
+     //Proportion of individuals consuming each resource at time t
+     //Proportion of individuals at each ind_timestep at time t
+     //Others?
+     
+   } //end simulation time iterations
    
+   List output(1);
+   output(0) = pop_size;
+   //output(1) = ;
+   
+   return output;
 }
