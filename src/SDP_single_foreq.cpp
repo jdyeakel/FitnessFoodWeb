@@ -4,14 +4,15 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 List SDP_single_foreq(int tmax, NumericVector res_bs, int cons_bs, int xc, NumericVector rep_gain, 
 NumericMatrix f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, NumericMatrix c_learn, 
-NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N, int tsim, double eta,
+NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N_init, int tsim, double eta,
 double alpha, double beta, double comp) {
    
    //Note:
    //Here, state variables are in standard format
-   //To use a state variable X as an INDEX, it must be an INTEGER, and X=X-1
-   xc = xc -1; //Index
    double xc_state = (double) xc; //state
+   
+   //To use a state variable X as an INDEX, it must be an INTEGER, and X=X-1
+   xc = xc - 1; //Index
    
    //Book-keeping
    //Establish iniital variables required for the SDP
@@ -21,7 +22,11 @@ double alpha, double beta, double comp) {
    int num_dec = dec_ex.ncol();
    int max_enc = f_m.nrow(); //Rows = encounters; Columns = resources
    
+   //This is a state, not an index, so should equal cons_bs
    double xmax = (double) cons_bs;
+   
+   //Number of starting individuals
+   int N = N_init;
    
    //Initialize the record-keeping of states
    //Record the state vector for each individual
@@ -31,7 +36,7 @@ double alpha, double beta, double comp) {
    for (int n=0; n<N; n++) {
      alive(n) = 1;
    }
-   num_alive = sum(alive);
+   int num_alive = sum(alive); //so num_alive = N at first
    
    //This records the energetic state of each individual... values will change over time
    IntegerVector state_v(N);
@@ -42,7 +47,7 @@ double alpha, double beta, double comp) {
    //Record the time vector for each individual
    IntegerVector time_v(N);
    for (int i=0; i<N; i++) {
-     time_v(i) = 0; //The intitial time is 0 (first index) of course
+     time_v(i) = 1;
    }
    
    //Record the current resource for each individual
@@ -50,14 +55,19 @@ double alpha, double beta, double comp) {
    NumericVector rdraw_v = runif(N);
    for (int i=0; i<N; i++) {
     double rdraw = as<double>(rdraw_v(i));
-    res_v(i) = (int) floor(rdraw*(num_res)); //The initial resource is randomly drawn for each individual
+    //The initial resource is randomly drawn for each individual
+    //Random draw is between 0 and num_res-1... so already 'indexed'
+    res_v(i) = (int) floor(rdraw*(num_res)); 
    }
+   
    
    //What are the optimal decisions for the current individual-level states?
    IntegerVector dec_v(N);
    for (int i=0; i<N; i++) {
+     //res_v is already indexed
+     //state_v and time_v are states, not indices, so alter by -1
      IntegerMatrix istar_t = istar_nr(res_v(i)); //Grab the istar for the focal resource
-     dec_v(i) = istar_t(state_v(i),time_v(i)); //Grab the decision for a given state and time t=0;
+     dec_v(i) = istar_t(state_v(i)-1,time_v(i)-1); //Grab the decision for a given state and time t=0;
    }
    
    
@@ -65,7 +75,7 @@ double alpha, double beta, double comp) {
    for (int t=0; t<tsim; t++) {
      
      //Book-keeping
-     //Reset metrics
+     //Reset metrics (first iteration will be repetitive, but oh well)
      //How many individuals are currently alive?
      int N = num_alive;
      
@@ -84,7 +94,9 @@ double alpha, double beta, double comp) {
      //To save the 'next' values for the time vector
      IntegerVector t_next(N);
      
+     //Vector of stochastic mortality draws for the n iterations
      NumericVector rdraw_stochmort_v = runif(N);
+     
      //Begin Individual iterations... Note: N will change with each t
      for (int n=0; n<N; n++) {
        
