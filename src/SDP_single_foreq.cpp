@@ -81,6 +81,8 @@ double alpha, double beta, double comp) {
    //Sim time iterations stop at tsim - 1
    for (int t=0; t<(tsim-1); t++) {
      
+     Rcpp::Rcout << "tsim = " << t << std::endl;
+     
      //Book-keeping
      //Reset metrics (first iteration will be repetitive, but oh well)
      //How many individuals are currently alive?

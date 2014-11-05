@@ -116,14 +116,14 @@ for (i in 1:num.res) {
 #Costs should scale allometrically :: Shouldn't costs be a function of the resource??? ~equiv. to speed differential?
 #Latent trait probability
 #The a1, a2, and a3 parameters are generally site-specific
-a1 <- 1.41
-a2 <- 3.73
-a3 <- -1.87
-p <- exp(a1 + a2*log(res.bs/cons.bs) + a3*log(res.bs/cons.bs)^2)
-pr.link <- p/(1+p)
+# a1 <- 1.41
+# a2 <- 3.73
+# a3 <- -1.87
+# p <- exp(a1 + a2*log(res.bs/cons.bs) + a3*log(res.bs/cons.bs)^2)
+# pr.link <- p/(1+p)
 #The probability that the interaction should NOT occur
 #We will use this to weight the c.forage term
-pr.nolink <- 1 - pr.link
+# pr.nolink <- 1 - pr.link
 const <- 3.98/1000 *5 * 12 #3.98 mL O2 /1000 *5kcal * 12 hours = 0.2388 Joules
 #Relatively high costs
 
@@ -370,6 +370,11 @@ filled_contour(seq(xc, xmax, length.out = nrow(istar.node)),
                lwd = 0.1,xlab="Energetic Reserves",ylab="Resource Size")
 par(op)
 
+
+#Exporting functions
+#################
+
+
 #Uniform Habitat
 istarhab0 <- istar.node
 save.image("Hab0.RData")
@@ -416,9 +421,31 @@ pdf("/Users/justinyeakel/Dropbox/PostDoc/2014_Foodweb_SDP/Manuscript/Figure_stat
 plot(D12,type="l",ylab="Matrix Diff (t[y] - t[y-1])",xlab="t")
 dev.off()
 
-
 #Plotting Fitness values
 r <- 5
 plot(W.nr[[r]][1,],type="l",ylim=c(0,3))
 for (i in 2:20) {lines(W.nr[[r]][i,])}
+
+
+# Forward equation
+
+
+#####################
+# Forward equation
+
+#Starting values
+N <- 20 #starting Num. of individuals
+tsim <- 100 #Simulation time
+r.alpha <- 5 #Recruit density-independent growth rate
+r.beta <- 1/80 #Recruit density-dependent growth rate
+r.comp <- 1 #degree of compensation
+
+cout.foreq <- SDP_single_foreq(tmax, res.bs, cons.bs, xc, rep.gain, 
+                 f.m, mort, dec.ls, rho.vec, c.learn, g.forage, c.forage, 
+                 W.nr, istar.nr, N, tsim, eta,
+                 r.alpha, r.beta, r.comp)
+
+pop.traj <- cout.foreq[[1]]
+
+
 
