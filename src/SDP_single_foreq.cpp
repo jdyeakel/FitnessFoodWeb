@@ -4,8 +4,8 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 List SDP_single_foreq(int tmax, NumericVector res_bs, int cons_bs, int xc, NumericVector rep_gain, 
 NumericMatrix f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, NumericMatrix c_learn, 
-NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N_init, int tsim, double eta,
-double alpha, double beta, double comp) {
+NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N_init, int tsim, 
+NumericVector eta, double alpha, double beta, double comp) {
    
    //Note:
    //Here, state variables are in standard format
@@ -214,9 +214,10 @@ double alpha, double beta, double comp) {
          double x_next; //state
          double d_ind_x = (double) ind_x; //double current state
          rdraw = as<double>(rdraw_v);
+         
          if (rdraw < rho) {
            //If food is captured (res_next is an index)
-           x_next = d_ind_x + eta*g_forage(res_next(n)) - c_forage(res_next(n));
+           x_next = d_ind_x + eta(res_next(n))*g_forage(res_next(n)) - c_forage(res_next(n));
          } else {
            //If food is not captured
            x_next = d_ind_x - c_forage(res_next(n));
