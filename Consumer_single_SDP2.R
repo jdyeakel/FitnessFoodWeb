@@ -440,6 +440,8 @@ r.alpha <- 5 #Recruit density-independent growth rate
 r.beta <- 1/80 #Recruit density-dependent growth rate
 r.comp <- 1 #degree of compensation
 
+sourceCpp("src/SDP_single_foreq.cpp")
+
 cout.foreq <- SDP_single_foreq(tmax, res.bs, cons.bs, xc, rep.gain, 
                  f.m, mort, dec.ls, rho.vec, c.learn, g.forage, c.forage, 
                  W.nr, istar.nr, N, tsim, eta,
