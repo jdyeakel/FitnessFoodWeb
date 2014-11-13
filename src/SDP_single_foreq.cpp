@@ -95,7 +95,7 @@ NumericVector eta, double alpha, double beta, double comp) {
      IntegerVector SSB_v(N);
      
      //To save the 'next' values for the energetic vector
-     IntegerVector x_next_rd(N);
+     NumericVector x_next_rd(N);
      
      //To save the 'next' resouce consumed
      IntegerVector res_next(N);
@@ -107,6 +107,8 @@ NumericVector eta, double alpha, double beta, double comp) {
      //Begin Individual iterations... Note: N will change with each t
      for (int n=0; n<N; n++) {
        
+       //Rcpp::Rcout << "N = " << n << std::endl;
+       
        //Define states for the individual
        //Current energetic state (state)
        int ind_x = state_v(n);
@@ -117,9 +119,17 @@ NumericVector eta, double alpha, double beta, double comp) {
        //Decision matrix associated with current resource (state)
        int ind_d = dec_v(n);
        
+       //Reporting
+       Rcpp::Rcout << "n = " << n << std::endl;
+       Rcpp::Rcout << "ind_r = " << ind_r << std::endl;
+       //Rcpp::Rcout << "ind_d = " << ind_d << std::endl;
+       //Rcpp::Rcout << "ind_x = " << ind_x << std::endl;
+       
        //REPRODUCTION
        //What is the probability that the individual will reproduce?
        double rep_prob = rep_gain(ind_x-1);
+       
+       
        //Does the individual reproduce in this timestep?
        //Take care of reproduction after n iterations... to include density dependence
        NumericVector rdraw_v = runif(1);
@@ -179,6 +189,7 @@ NumericVector eta, double alpha, double beta, double comp) {
          //NOTE: this is an index, as it has been for res
          res_next(n) = p_bin(draw);
          
+         
          //How many of this resource is found?
          NumericVector k_prob(max_enc+1);
          IntegerVector k_num(max_enc+1);
@@ -205,8 +216,14 @@ NumericVector eta, double alpha, double beta, double comp) {
          //This defines the index for the resource amt / rho
          int k = k_bin(draw);
          
+         
+         
          //What is the probability of catching the resource: rho_vec(k)
-         double rho = rho_vec(k);
+         //Rcpp::Rcout << "k= " << k << std::endl;
+         //Must be k-1 because k is a state, and needs to be used as an index
+         double rho = rho_vec(k-1);
+         
+         Rcpp::Rcout << "Made it here " << n << std::endl;
          
          //Is the prey capture successfull?
          //Energetic dynamics
@@ -224,7 +241,9 @@ NumericVector eta, double alpha, double beta, double comp) {
          }
          
          //Turn state x_next into nearest integer
-         x_next_rd(n) = (int) round(x_next);
+         x_next_rd(n) = (double) round(x_next);
+         
+         
          
          //Boundary conditions and determine whether individual dies
          if (x_next_rd(n) < xc_state) {
@@ -247,11 +266,12 @@ NumericVector eta, double alpha, double beta, double comp) {
        //Next individual time integer
        //Shouldn't matter if we advance time for dead individuals. Culling occurs later
        t_next(n) = time_v(n) + 1;
-       
+      
        
      } //end individual iterations
      
-     int num_alive = sum(alive);
+     num_alive = sum(alive);
+     
      
      //Density-dependent Reproduction :: TODO
      //Must add on new individuals to the current state vectors
@@ -265,8 +285,15 @@ NumericVector eta, double alpha, double beta, double comp) {
      //The number of new individuals: Recruit biomass / mass of individual
      int num_recruits = (int) round(recruitB/xmax);
      
+
+     
      //Total individual count = surviving individuals + recruits
      int new_N = num_alive + num_recruits;
+     
+     Rcpp::Rcout << "num_alive = " << num_alive << std::endl;
+     Rcpp::Rcout << "recruit = " << num_recruits << std::endl;
+     Rcpp::Rcout << "Total = " << new_N << std::endl;
+     
      //Add on new individuals
      IntegerVector new_alive(new_N);
      IntegerVector new_state_v(new_N);
@@ -274,45 +301,53 @@ NumericVector eta, double alpha, double beta, double comp) {
      IntegerVector new_dec_v(new_N);
      IntegerVector new_time_v(new_N);
      
+     
+     
      //Transcribe over values for states at NEXT time interval
-     int tic = 0;
-     for (int i=0; i<N; i++) {
-       //only do this for surviving individuals
-       if (alive(i) == 1) {
-         new_alive(tic) = alive(i);
-         new_state_v(tic) = x_next_rd(i); //state
-         new_res_v(tic) = res_next(i); //index
-         new_time_v(tic) = time_v(i) + 1; //advance time interval
-         IntegerMatrix istar_t = istar_nr(new_res_v(tic)); //Grab the istar for the focal resource
-         new_dec_v(tic) = istar_t(new_state_v(tic)-1,new_time_v(tic)-1);
+     if (num_alive > 0) {
+       int tic = 0;
+       for (int i=0; i<N; i++) {
+         //only do this for surviving individuals
+         if (alive(i) == 1) {
+           new_alive(tic) = alive(i);
+           new_state_v(tic) = x_next_rd(i); //state
+           new_res_v(tic) = res_next(i); //index
+           new_time_v(tic) = time_v(i) + 1; //advance time interval
+           IntegerMatrix istar_t = istar_nr(new_res_v(tic)); //Grab the istar for the focal resource
+           new_dec_v(tic) = istar_t(new_state_v(tic)-1,new_time_v(tic)-1);
+           tic = tic + 1;
+         }
+       }
+     }
+     
+     //Initiate new values for recruits
+     if (num_recruits > 0) {
+       int tic = 0; //just for the rdraw_v index
+       int checki = 0;
+       for (int i=num_alive; i<new_N; i++) {
+         checki = i;
+         new_alive(i) = 1; //Recruits are all alive
+         new_state_v(i) = xmax; //Initial energetic state is xmax
+         new_time_v(i) = 1;
+         //Randomly draw initial resource
+         NumericVector rdraw_v = runif(1);
+         double rdraw = as<double>(rdraw_v); 
+         new_res_v(i) = (int) floor(rdraw*(num_res));
+         IntegerMatrix istar_t = istar_nr(new_res_v(i)); //Grab the istar for the focal resource
+         new_dec_v(i) = istar_t(new_state_v(i)-1,new_time_v(i)-1); //Grab the decision for a given state and time t=0;
          tic = tic + 1;
        }
      }
-     //Initiate new values for recruits
-     
-     tic = 0; //just for the rdraw_v index
-     for (int i=num_alive; i<new_N; i++) {
-       new_alive(i) = 1; //Recruits are all alive
-       new_state_v(i) = xmax; //Initial energetic state is xmax
-       new_time_v(i) = 1;
-       //Randomly draw initial resource
-       NumericVector rdraw_v = runif(1);
-       double rdraw = as<double>(rdraw_v); 
-       new_res_v(i) = (int) floor(rdraw*(num_res));
-       IntegerMatrix istar_t = istar_nr(new_res_v(i)); //Grab the istar for the focal resource
-       new_dec_v(i) = istar_t(new_state_v(i)-1,new_time_v(i)-1); //Grab the decision for a given state and time t=0;
-       tic = tic + 1;
-     }
-     
+
      //RESET
      //How many individuals are there?
      num_alive = sum(new_alive);
      
      //Redefine states only for alive individuals
-     IntegerVector state_v = new_state_v;
-     IntegerVector time_v = new_time_v;
-     IntegerVector res_v = new_res_v;
-     IntegerVector dec_v = new_dec_v;
+     state_v = new_state_v;
+     time_v = new_time_v;
+     res_v = new_res_v;
+     dec_v = new_dec_v;
      
      //EXPORT
      //Save variables
@@ -321,6 +356,8 @@ NumericVector eta, double alpha, double beta, double comp) {
      //Proportion of individuals consuming each resource at time t
      //Proportion of individuals at each ind_timestep at time t
      //Others?
+     
+     
      
    } //end simulation time iterations
    
