@@ -435,8 +435,8 @@ for (i in 2:20) {lines(W.nr[[r]][i,])}
 
 #Starting values
 N <- 20 #starting Num. of individuals
-tsim <- 100 #Simulation time
-r.alpha <- 5 #Recruit density-independent growth rate
+tsim <- 1000 #Simulation time
+r.alpha <- 4 #Recruit density-independent growth rate
 r.beta <- 1/80 #Recruit density-dependent growth rate
 r.comp <- 1 #degree of compensation
 
@@ -449,5 +449,5 @@ cout.foreq <- SDP_single_foreq(tmax, res.bs, cons.bs, xc, rep.gain,
 
 pop.traj <- cout.foreq[[1]]
 
-
+plot(pop.traj,type="l")
 
