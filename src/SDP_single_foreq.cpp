@@ -107,6 +107,8 @@ NumericVector eta, double alpha, double beta, double comp) {
      //Begin Individual iterations... Note: N will change with each t
      for (int n=0; n<N; n++) {
        
+       
+       
        //Rcpp::Rcout << "N = " << n << std::endl;
        
        //Define states for the individual
@@ -120,8 +122,8 @@ NumericVector eta, double alpha, double beta, double comp) {
        int ind_d = dec_v(n);
        
        //Reporting
-       Rcpp::Rcout << "n = " << n << std::endl;
-       Rcpp::Rcout << "ind_r = " << ind_r << std::endl;
+       //Rcpp::Rcout << "n = " << n << std::endl;
+       //Rcpp::Rcout << "ind_r = " << ind_r << std::endl;
        //Rcpp::Rcout << "ind_d = " << ind_d << std::endl;
        //Rcpp::Rcout << "ind_x = " << ind_x << std::endl;
        
@@ -190,6 +192,7 @@ NumericVector eta, double alpha, double beta, double comp) {
          res_next(n) = p_bin(draw);
          
          
+         
          //How many of this resource is found?
          NumericVector k_prob(max_enc+1);
          IntegerVector k_num(max_enc+1);
@@ -216,15 +219,14 @@ NumericVector eta, double alpha, double beta, double comp) {
          //This defines the index for the resource amt / rho
          int k = k_bin(draw);
          
-         
+        
          
          //What is the probability of catching the resource: rho_vec(k)
          //Rcpp::Rcout << "k= " << k << std::endl;
          //Must be k-1 because k is a state, and needs to be used as an index
          double rho = rho_vec(k-1);
          
-         Rcpp::Rcout << "Made it here " << n << std::endl;
-         
+          
          //Is the prey capture successfull?
          //Energetic dynamics
          rdraw_v = runif(1);
@@ -243,17 +245,20 @@ NumericVector eta, double alpha, double beta, double comp) {
          //Turn state x_next into nearest integer
          x_next_rd(n) = (double) round(x_next);
          
-         
+         //THE BUG IS HERE
          
          //Boundary conditions and determine whether individual dies
          if (x_next_rd(n) < xc_state) {
            x_next_rd(n) = 0;
            alive(n) = 0;
          }
+         //Rcpp::Rcout << "Made it here; t = " << t << std::endl;
          if (x_next_rd(n) > xmax) {
            x_next_rd(n) = xmax;
            alive(n) = 1;
          }
+         
+         
          
          //If individual suffers stochastic mortality
        } else { 
@@ -290,9 +295,9 @@ NumericVector eta, double alpha, double beta, double comp) {
      //Total individual count = surviving individuals + recruits
      int new_N = num_alive + num_recruits;
      
-     Rcpp::Rcout << "num_alive = " << num_alive << std::endl;
-     Rcpp::Rcout << "recruit = " << num_recruits << std::endl;
-     Rcpp::Rcout << "Total = " << new_N << std::endl;
+     //Rcpp::Rcout << "num_alive = " << num_alive << std::endl;
+     //Rcpp::Rcout << "recruit = " << num_recruits << std::endl;
+     //Rcpp::Rcout << "Total = " << new_N << std::endl;
      
      //Add on new individuals
      IntegerVector new_alive(new_N);
@@ -301,7 +306,9 @@ NumericVector eta, double alpha, double beta, double comp) {
      IntegerVector new_dec_v(new_N);
      IntegerVector new_time_v(new_N);
      
-     
+     //THE BUG IS HERE
+     //The bug appears when the next 2 code blocks are run TOGETHER
+     //Each code block works fine on its own.
      
      //Transcribe over values for states at NEXT time interval
      if (num_alive > 0) {
@@ -320,12 +327,11 @@ NumericVector eta, double alpha, double beta, double comp) {
        }
      }
      
+     
      //Initiate new values for recruits
      if (num_recruits > 0) {
        int tic = 0; //just for the rdraw_v index
-       int checki = 0;
        for (int i=num_alive; i<new_N; i++) {
-         checki = i;
          new_alive(i) = 1; //Recruits are all alive
          new_state_v(i) = xmax; //Initial energetic state is xmax
          new_time_v(i) = 1;
@@ -348,6 +354,7 @@ NumericVector eta, double alpha, double beta, double comp) {
      time_v = new_time_v;
      res_v = new_res_v;
      dec_v = new_dec_v;
+     alive = new_alive;
      
      //EXPORT
      //Save variables
