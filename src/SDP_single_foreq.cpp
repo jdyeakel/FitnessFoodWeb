@@ -144,17 +144,22 @@ NumericVector eta, double alpha, double beta, double comp) {
          SSB_v(n) = 0;
        }
        
-       //Stochastic mortality
-       double pr_stochmort = mort(ind_r); //ind_r is index already
-       NumericVector rdraw_stochmort_v = runif(1);
-       double rdraw_stochmort = as<double>(rdraw_stochmort_v);
+       //Longevity mortality + Stochastic mortality
+       //If the individual has not reached it's max longevity
        int stochmort;
-       if (rdraw_stochmort < pr_stochmort) {
-         //Individual dies
-         stochmort = 1;
+       if (time_v(n) < tmax) {
+         double pr_stochmort = mort(ind_r); //ind_r is index already
+         NumericVector rdraw_stochmort_v = runif(1);
+         double rdraw_stochmort = as<double>(rdraw_stochmort_v);
+         if (rdraw_stochmort < pr_stochmort) {
+           //Individual dies
+           stochmort = 1;
+         } else {
+           //Individual survives
+           stochmort = 0;
+         }
        } else {
-         //Individual survives
-         stochmort = 0;
+         stochmort = 1; //All individuals that reach tmax die
        }
        
        //The following steps are only relevant for surviving individuals
@@ -245,8 +250,6 @@ NumericVector eta, double alpha, double beta, double comp) {
          //Turn state x_next into nearest integer
          x_next_rd(n) = (double) round(x_next);
          
-         //THE BUG IS HERE
-         
          //Boundary conditions and determine whether individual dies
          if (x_next_rd(n) < xc_state) {
            x_next_rd(n) = 0;
@@ -257,8 +260,6 @@ NumericVector eta, double alpha, double beta, double comp) {
            x_next_rd(n) = xmax;
            alive(n) = 1;
          }
-         
-         
          
          //If individual suffers stochastic mortality
        } else { 
@@ -272,7 +273,6 @@ NumericVector eta, double alpha, double beta, double comp) {
        //Shouldn't matter if we advance time for dead individuals. Culling occurs later
        t_next(n) = time_v(n) + 1;
       
-       
      } //end individual iterations
      
      num_alive = sum(alive);
@@ -306,10 +306,7 @@ NumericVector eta, double alpha, double beta, double comp) {
      IntegerVector new_dec_v(new_N);
      IntegerVector new_time_v(new_N);
      
-     //THE BUG IS HERE
-     //The bug appears when the next 2 code blocks are run TOGETHER
-     //Each code block works fine on its own.
-     
+
      //Transcribe over values for states at NEXT time interval
      if (num_alive > 0) {
        int tic = 0;
@@ -361,8 +358,8 @@ NumericVector eta, double alpha, double beta, double comp) {
      pop_size(t+1) = num_alive;
      //Other import metrics
      //Proportion of individuals consuming each resource at time t
-     //Proportion of individuals at each ind_timestep at time t
-     //Others?
+     //Proportion of individuals at each ind_timestep at time t (distribution)
+     //Individual energetic states over time (distribution)
      
      
      
@@ -373,4 +370,5 @@ NumericVector eta, double alpha, double beta, double comp) {
    //output(1) = ;
    
    return output;
+   
 }
