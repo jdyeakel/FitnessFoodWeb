@@ -98,7 +98,7 @@ rho.vec <- 1 - exp(-encounters^2/(5*max(encounters)))
 #Consumer-resource mortality rates
 Ratio.RC <- res.bs/cons.bs
 mp1 <- 0.003
-max.mort <- 0.1
+max.mort <- 0.01
 mort <- max.mort - max.mort*(1 - 2*mp1)^(Ratio.RC^2)
 
 
@@ -350,7 +350,7 @@ istar.nr <- cout[[2]]
 
 #Time-invariant analysis
 
-time.stamp <- 69
+time.stamp <- 1
 istar.node <- do.call(cbind,lapply(istar.nr,function(x){x[,time.stamp]}))
 #Eliminate the <xc rows
 istar.node <- istar.node[-seq(1,xc-1,1),]
@@ -435,8 +435,8 @@ for (i in 2:20) {lines(W.nr[[r]][i,])}
 
 #Starting values
 N <- 20 #starting Num. of individuals
-tsim <- 1000 #Simulation time
-r.alpha <- 4 #Recruit density-independent growth rate
+tsim <- 500 #Simulation time
+r.alpha <- 3 #Recruit density-independent growth rate
 r.beta <- 1/80 #Recruit density-dependent growth rate
 r.comp <- 1 #degree of compensation
 
@@ -448,6 +448,32 @@ cout.foreq <- SDP_single_foreq(tmax, res.bs, cons.bs, xc, rep.gain,
                  r.alpha, r.beta, r.comp)
 
 pop.traj <- cout.foreq[[1]]
+x.traj <- cout.foreq[[2]]
+t.traj <- cout.foreq[[3]]
+d.traj <- cout.foreq[[4]]
+trophic.traj <- cout.foreq[[5]]
 
 plot(pop.traj,type="l")
+
+#proportional trophic interactions
+trophic.v <- unlist(trophic.traj[1:100])
+trophic.prop <- numeric(20)
+for (i in 1:20) {
+  trophic.prop[i] <- length(which(trophic.v == i))/num.res
+}
+plot(res.bs,trophic.prop)
+
+plot(rep(1,length(trophic.traj[[1]])),trophic.traj[[1]],xlim=c(0,tsim),ylim=c(0,num.res),pch='.')
+for (i in 2:tsim) {
+  points(rep(i,length(trophic.traj[[i]])),trophic.traj[[i]],pch='.')
+}
+
+
+
+
+
+
+
+
+
 

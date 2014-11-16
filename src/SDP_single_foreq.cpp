@@ -74,8 +74,20 @@ NumericVector eta, double alpha, double beta, double comp) {
      dec_v(i) = istar_t(state_v(i)-1,time_v(i)-1); //Grab the decision for a given state and time t=0;
    }
    
+   //TO EXPORT
    //Record initial pop size
    pop_size(0) = num_alive;
+   
+   List trophic_int(tsim);
+   List energetic_state(tsim);
+   List temporal_state(tsim);
+   List decision_state(tsim);
+   
+   trophic_int(0) = res_v;
+   energetic_state(0) = state_v;
+   temporal_state(0) = time_v;
+   decision_state(0) = dec_v;
+   
    
    //Begin time iteration (this is the simulation time)
    //Sim time iterations stop at tsim - 1
@@ -356,17 +368,26 @@ NumericVector eta, double alpha, double beta, double comp) {
      //EXPORT
      //Save variables
      pop_size(t+1) = num_alive;
-     //Other import metrics
-     //Proportion of individuals consuming each resource at time t
-     //Proportion of individuals at each ind_timestep at time t (distribution)
-     //Individual energetic states over time (distribution)
      
+     //Other import metrics
+     //Distribution of individuals consuming each resource at time t
+     trophic_int(t+1) = res_v;
+     //Distribution of individual energetic states over time (distribution)
+     energetic_state(t+1) = state_v;
+     //Distribution of individuals at each ind_timestep at time t (distribution)
+     temporal_state(t+1) = time_v;
+     
+     decision_state(t+1) = dec_v;
      
      
    } //end simulation time iterations
    
-   List output(1);
+   List output(5);
    output(0) = pop_size;
+   output(1) = energetic_state;
+   output(2) = temporal_state;
+   output(3) = decision_state;
+   output(4) = trophic_int;
    //output(1) = ;
    
    return output;
