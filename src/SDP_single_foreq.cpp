@@ -5,7 +5,7 @@ using namespace Rcpp;
 List SDP_single_foreq(int tmax, NumericVector res_bs, int cons_bs, int xc, NumericVector rep_gain, 
 NumericMatrix f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, NumericMatrix c_learn, 
 NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N_init, int tsim, 
-NumericVector eta, double alpha, double beta, double comp) {
+double alpha, double beta, double comp) {
    
    //Note:
    //Here, state variables are in standard format
@@ -51,7 +51,7 @@ NumericVector eta, double alpha, double beta, double comp) {
    //Record the time vector for each individual
    IntegerVector time_v(N);
    for (int i=0; i<N; i++) {
-     time_v(i) = 1;
+     time_v(i) = 1; //tmax-1;
    }
    
    //Record the current resource for each individual
@@ -82,12 +82,19 @@ NumericVector eta, double alpha, double beta, double comp) {
    List energetic_state(tsim);
    List temporal_state(tsim);
    List decision_state(tsim);
+   List fitness(tsim);
    
    trophic_int(0) = res_v;
    energetic_state(0) = state_v;
    temporal_state(0) = time_v;
    decision_state(0) = dec_v;
    
+   NumericVector ind_fit(N);
+   for (int i=0; i<N; i++) {
+     NumericMatrix W_matrix = W_nr(res_v(i));
+     ind_fit(i) = W_matrix(state_v(i)-1,time_v(i)-1);
+   }
+   fitness(0) = ind_fit;
    
    //Begin time iteration (this is the simulation time)
    //Sim time iterations stop at tsim - 1
@@ -113,8 +120,10 @@ NumericVector eta, double alpha, double beta, double comp) {
      IntegerVector res_next(N);
      
      //To save the 'next' values for the time vector
-     IntegerVector t_next(N);
+     //IntegerVector t_next(N);
      
+     //Individual fitness values
+     NumericVector ind_fit(N);
      
      //Begin Individual iterations... Note: N will change with each t
      for (int n=0; n<N; n++) {
@@ -253,7 +262,7 @@ NumericVector eta, double alpha, double beta, double comp) {
          
          if (rdraw < rho) {
            //If food is captured (res_next is an index)
-           x_next = d_ind_x + eta(res_next(n))*g_forage(res_next(n)) - c_forage(res_next(n));
+           x_next = d_ind_x + g_forage(res_next(n)) - c_forage(res_next(n));
          } else {
            //If food is not captured
            x_next = d_ind_x - c_forage(res_next(n));
@@ -281,11 +290,31 @@ NumericVector eta, double alpha, double beta, double comp) {
          
        } //end stochmort if statement
        
+       //Record individual fitness value
+       NumericMatrix W_matrix = W_nr(res_next(n));
+       ind_fit(n) = W_matrix(x_next_rd(n)-1,time_v(n)-1);
+       
+       
        //Next individual time integer
        //Shouldn't matter if we advance time for dead individuals. Culling occurs later
-       t_next(n) = time_v(n) + 1;
+       //t_next(n) = time_v(n) + 1;
       
      } //end individual iterations
+     
+     
+     
+     //Import metrics
+     //Distribution of individuals consuming each resource at time t
+     trophic_int(t+1) = res_v;
+     //Distribution of individual energetic states over time (distribution)
+     energetic_state(t+1) = state_v;
+     //Distribution of individuals at each ind_timestep at time t (distribution)
+     temporal_state(t+1) = time_v;
+     //Distribution of decisions at time t
+     decision_state(t+1) = dec_v;
+     //Distribution of fitness values at time t
+     fitness(t+1) = ind_fit;
+     //Imports
      
      num_alive = sum(alive);
      
@@ -301,7 +330,7 @@ NumericVector eta, double alpha, double beta, double comp) {
      
      //The number of new individuals: Recruit biomass / mass of individual
      int num_recruits = (int) round(recruitB/xmax);
-     
+     //int num_recruits = 0;
 
      
      //Total individual count = surviving individuals + recruits
@@ -369,25 +398,18 @@ NumericVector eta, double alpha, double beta, double comp) {
      //Save variables
      pop_size(t+1) = num_alive;
      
-     //Other import metrics
-     //Distribution of individuals consuming each resource at time t
-     trophic_int(t+1) = res_v;
-     //Distribution of individual energetic states over time (distribution)
-     energetic_state(t+1) = state_v;
-     //Distribution of individuals at each ind_timestep at time t (distribution)
-     temporal_state(t+1) = time_v;
      
-     decision_state(t+1) = dec_v;
      
      
    } //end simulation time iterations
    
-   List output(5);
+   List output(6);
    output(0) = pop_size;
    output(1) = energetic_state;
    output(2) = temporal_state;
    output(3) = decision_state;
    output(4) = trophic_int;
+   output(5) = fitness;
    //output(1) = ;
    
    return output;

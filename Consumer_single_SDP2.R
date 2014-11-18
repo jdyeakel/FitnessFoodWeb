@@ -342,7 +342,7 @@ for (r in 1:num.res) {
 
 sourceCpp("src/SDP_single.cpp")
 
-cout <- SDP_single(tmax, res.bs, cons.bs, xc, rep.gain, 
+cout <- SDP_single(tmax, res.bs, cons.bs, rep.gain, 
            f.m, mort, dec.ls, rho.vec, c.learn, g.forage, c.forage)
 W.nr <- cout[[1]]
 istar.nr <- cout[[2]]
@@ -435,7 +435,7 @@ for (i in 2:20) {lines(W.nr[[r]][i,])}
 
 #Starting values
 N <- 20 #starting Num. of individuals
-tsim <- 500 #Simulation time
+tsim <- 1000 #Simulation time
 r.alpha <- 3 #Recruit density-independent growth rate
 r.beta <- 1/80 #Recruit density-dependent growth rate
 r.comp <- 1 #degree of compensation
@@ -448,18 +448,19 @@ cout.foreq <- SDP_single_foreq(tmax, res.bs, cons.bs, xc, rep.gain,
                  r.alpha, r.beta, r.comp)
 
 pop.traj <- cout.foreq[[1]]
-x.traj <- cout.foreq[[2]]
-t.traj <- cout.foreq[[3]]
+x.traj <- cout.foreq[[2]]; x.mean <- unlist(lapply(x.traj,mean))
+t.traj <- cout.foreq[[3]]; t.mean <- unlist(lapply(t.traj,mean))
 d.traj <- cout.foreq[[4]]
 trophic.traj <- cout.foreq[[5]]
+fitness <- cout.foreq[[6]]; fit.mean <- unlist(lapply(fitness,mean))
 
 plot(pop.traj,type="l")
 
 #proportional trophic interactions
-trophic.v <- unlist(trophic.traj[1:100])
+trophic.v <- unlist(trophic.traj[1:tsim])
 trophic.prop <- numeric(20)
 for (i in 1:20) {
-  trophic.prop[i] <- length(which(trophic.v == i))/num.res
+  trophic.prop[i] <- length(which(trophic.v == i))/length(trophic.v)
 }
 plot(res.bs,trophic.prop)
 
@@ -468,7 +469,8 @@ for (i in 2:tsim) {
   points(rep(i,length(trophic.traj[[i]])),trophic.traj[[i]],pch='.')
 }
 
-
+#Plot fitness
+plot(fit.mean,type="l")
 
 
 
