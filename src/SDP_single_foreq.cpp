@@ -168,7 +168,7 @@ double alpha, double beta, double comp) {
        //Longevity mortality + Stochastic mortality
        //If the individual has not reached it's max longevity
        int stochmort;
-       if (time_v(n) < tmax) {
+       if (time_v(n) < tmax-1) {
          double pr_stochmort = mort(ind_r); //ind_r is index already
          NumericVector rdraw_stochmort_v = runif(1);
          double rdraw_stochmort = as<double>(rdraw_stochmort_v);
@@ -301,23 +301,7 @@ double alpha, double beta, double comp) {
       
      } //end individual iterations
      
-     
-     
-     //Import metrics
-     //Distribution of individuals consuming each resource at time t
-     trophic_int(t+1) = res_v;
-     //Distribution of individual energetic states over time (distribution)
-     energetic_state(t+1) = state_v;
-     //Distribution of individuals at each ind_timestep at time t (distribution)
-     temporal_state(t+1) = time_v;
-     //Distribution of decisions at time t
-     decision_state(t+1) = dec_v;
-     //Distribution of fitness values at time t
-     fitness(t+1) = ind_fit;
-     //Imports
-     
      num_alive = sum(alive);
-     
      
      //Density-dependent Reproduction :: TODO
      //Must add on new individuals to the current state vectors
@@ -346,8 +330,8 @@ double alpha, double beta, double comp) {
      IntegerVector new_res_v(new_N);
      IntegerVector new_dec_v(new_N);
      IntegerVector new_time_v(new_N);
+     NumericVector new_ind_fit(new_N);
      
-
      //Transcribe over values for states at NEXT time interval
      if (num_alive > 0) {
        int tic = 0;
@@ -360,10 +344,24 @@ double alpha, double beta, double comp) {
            new_time_v(tic) = time_v(i) + 1; //advance time interval
            IntegerMatrix istar_t = istar_nr(new_res_v(tic)); //Grab the istar for the focal resource
            new_dec_v(tic) = istar_t(new_state_v(tic)-1,new_time_v(tic)-1);
+           new_ind_fit(tic) = ind_fit(i);
            tic = tic + 1;
          }
        }
      }
+     
+     //Export metrics :: These are for surviving individuals (not counting recruits)
+     //Distribution of individuals consuming each resource at time t
+     trophic_int(t+1) = new_res_v;
+     //Distribution of individual energetic states over time (distribution)
+     energetic_state(t+1) = new_state_v;
+     //Distribution of individuals at each ind_timestep at time t (distribution)
+     temporal_state(t+1) = new_time_v;
+     //Distribution of decisions at time t
+     decision_state(t+1) = new_dec_v;
+     //Distribution of fitness values at time t
+     fitness(t+1) = new_ind_fit;
+     //Exports
      
      
      //Initiate new values for recruits
@@ -382,7 +380,8 @@ double alpha, double beta, double comp) {
          tic = tic + 1;
        }
      }
-
+     
+     
      //RESET
      //How many individuals are there?
      num_alive = sum(new_alive);
@@ -397,8 +396,6 @@ double alpha, double beta, double comp) {
      //EXPORT
      //Save variables
      pop_size(t+1) = num_alive;
-     
-     
      
      
    } //end simulation time iterations

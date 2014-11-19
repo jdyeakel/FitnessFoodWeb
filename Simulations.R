@@ -40,19 +40,20 @@ c.forage <- Rout[[10]]
 eta <- Rout[[11]]
 
 #Run Backwards simulation
-cout <- SDP_single(tmax = tmax, 
-                   res_bs = res.bs, 
-                   cons_bs = cons.bs,
-                   xc = xc,
-                   rep_gain = rep.gain, 
-                   f_m = f.m, 
-                   mort = mort, 
-                   dec_ls = dec.ls, 
-                   rho_vec = rho.vec, 
-                   c_learn = c.learn, 
-                   g_forage = g.forage, 
-                   c_forage = c.forage
-                   )
+cout <- SDP_single(
+  tmax = tmax, 
+  res_bs = res.bs, 
+  cons_bs = cons.bs,
+  xc = xc,
+  rep_gain = rep.gain, 
+  f_m = f.m, 
+  mort = mort, 
+  dec_ls = dec.ls, 
+  rho_vec = rho.vec, 
+  c_learn = c.learn, 
+  g_forage = g.forage, 
+  c_forage = c.forage
+)
 W.nr <- cout[[1]]
 istar.nr <- cout[[2]]
 
@@ -81,40 +82,45 @@ par(op)
 
 #Starting values
 N <- 20 #starting Num. of individuals
-tsim <- 1000 #Simulation time
+tsim <- 500 #Simulation time
 r.alpha <- 2 #Recruit density-independent growth rate
 r.beta <- 1/80 #Recruit density-dependent growth rate
 r.comp <- 1 #degree of compensation
 
-cout.foreq <- SDP_single_foreq(tmax = tmax, 
-                               res_bs = res.bs, 
-                               cons_bs = cons.bs, 
-                               xc = xc, 
-                               rep_gain = rep.gain, 
-                               f_m = f.m, 
-                               mort = mort, 
-                               dec_ls = dec.ls, 
-                               rho_vec = rho.vec, 
-                               c_learn = c.learn, 
-                               g_forage = g.forage,  
-                               c_forage = c.forage, 
-                               W_nr = W.nr, 
-                               istar_nr = istar.nr, 
-                               N_init = N, 
-                               tsim = tsim, 
-                               alpha = r.alpha, 
-                               beta = r.beta, 
-                               comp = r.comp
-                               )
+cout.foreq <- SDP_single_foreq(
+  tmax = tmax, 
+  res_bs = res.bs, 
+  cons_bs = cons.bs, 
+  xc = xc, 
+  rep_gain = rep.gain, 
+  f_m = f.m, 
+  mort = mort, 
+  dec_ls = dec.ls, 
+  rho_vec = rho.vec, 
+  c_learn = c.learn, 
+  g_forage = g.forage,  
+  c_forage = c.forage, 
+  W_nr = W.nr, 
+  istar_nr = istar.nr, 
+  N_init = N, 
+  tsim = tsim, 
+  alpha = r.alpha, 
+  beta = r.beta, 
+  comp = r.comp
+)
 
 pop.traj <- cout.foreq[[1]]
 x.traj <- cout.foreq[[2]]; x.mean <- unlist(lapply(x.traj,mean))
 t.traj <- cout.foreq[[3]]; t.mean <- unlist(lapply(t.traj,mean))
-d.traj <- cout.foreq[[4]]
-trophic.traj <- cout.foreq[[5]]
+d.traj <- cout.foreq[[4]]; d.mean <- unlist(lapply(d.traj,mean))
+#Trophic ID varies between 0 and num.res-1 bc they are Cpp indices
+trophic.traj <- cout.foreq[[5]]; trophic.mean <- unlist(lapply(trophic.traj,mean))
 fitness <- cout.foreq[[6]]; fit.mean <- unlist(lapply(fitness,mean))
 
 #Note: there is some funky stuff going on with d.traj... Nov 18,2014
+#This is because it is recording individuals at time tmax 
+#(there are no decisions to make there)
+#Set death to occur at tmax-1 for now, and it fixes issue
 
 
 plot(pop.traj,type="l")
