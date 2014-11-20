@@ -19,7 +19,7 @@ SDP_initialcond <- function(max.res.bs, num.res, cons.bs, tmax, hab.het.var,
   ## num.res <- 20
   
   #Define resource body mass vector
-  res.bs <- round(seq(1,max.res.bs,length.out=num.res),0)
+  res.bs <- round(seq(15,max.res.bs,length.out=num.res),0)
   
   #Logged body mass sequence version
   #res.bs <- round(lseq(1,max.res.bs,length.out=num.res),0); res.bs <- unique(res.bs); num.res <- length(res.bs)
