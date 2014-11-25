@@ -16,93 +16,115 @@ source("R/SDP_initialcond.R")
 sourceCpp("src/SDP_single.cpp")
 sourceCpp("src/SDP_single_foreq.cpp")
 
-
-#Initial Conditions
-Rout <- SDP_initialcond(
-  max.res.bs <- 1500, 
-  num.res <- 15, 
-  cons.bs <- 20, 
-  tmax <- 500, 
-  hab.het.var <- 0, 
-  max.enc <- 20, 
-  learn.mag <- 0)
-
-res.bs <- Rout[[1]]
-xc <- Rout[[2]]
-rep.gain <- Rout[[3]]
-f.m <- Rout[[4]]
-mort <- Rout[[5]]
-dec.ls <- Rout[[6]]
-rho.vec <- Rout[[7]]
-c.learn <- Rout[[8]]
-g.forage <- Rout[[9]]
-c.forage <- Rout[[10]]
-eta <- Rout[[11]]
-
-#Run Backwards simulation
-cout <- SDP_single(
-  tmax = tmax, 
-  res_bs = res.bs, 
-  cons_bs = cons.bs,
-  xc = xc,
-  rep_gain = rep.gain, 
-  f_m = f.m, 
-  mort = mort, 
-  dec_ls = dec.ls, 
-  rho_vec = rho.vec, 
-  c_learn = c.learn, 
-  g_forage = g.forage, 
-  c_forage = c.forage
-)
-W.nr <- cout[[1]]
-istar.nr <- cout[[2]]
+W.nr <- list()
+istar.nr <- list()
+land.hetero <- seq(0,1,length.out=5)
+for (j in 1:5) {
+  print(paste("j=",j,sep=""))
+  #Initial Conditions
+  Rout <- SDP_initialcond(
+    max.res.bs <- 10^4, 
+    num.res <- 15, 
+    cons.bs <- 20, 
+    tmax <- 500, 
+    hab.het.var <- land.hetero[j], 
+    max.enc <- 20, 
+    learn.mag <- 0)
+  
+  res.bs <- Rout[[1]]
+  xc <- Rout[[2]]
+  rep.gain <- Rout[[3]]
+  f.m <- Rout[[4]]
+  mort <- Rout[[5]]
+  dec.ls <- Rout[[6]]
+  rho.vec <- Rout[[7]]
+  c.learn <- Rout[[8]]
+  g.forage <- Rout[[9]]
+  c.forage <- Rout[[10]]
+  eta <- Rout[[11]]
+  
+  #Run Backwards simulation
+  cout <- SDP_single(
+    tmax = tmax, 
+    res_bs = res.bs, 
+    cons_bs = cons.bs,
+    xc = xc,
+    rep_gain = rep.gain, 
+    f_m = f.m, 
+    mort = mort, 
+    dec_ls = dec.ls, 
+    rho_vec = rho.vec, 
+    c_learn = c.learn, 
+    g_forage = g.forage, 
+    c_forage = c.forage
+  )
+  W.nr[[j]] <- cout[[1]]
+  istar.nr[[j]] <- cout[[2]]
+  
+}
+#   istar.node <- do.call(cbind,lapply(istar.nr,function(x){x[,time.stamp]}))
 
 #Plot the Decision matrix
 ####### 
 
 
-col <- RColorBrewer::brewer.pal(6, "Spectral")
-col <- rev(smooth_pal(col, 4))
+# col <- RColorBrewer::brewer.pal(6, "Spectral")
+# col <- rev(smooth_pal(col, 4))
+# 
+# op <- par(mfrow = c(2,2),
+#           oma = c(6,6,0,0) + 0.1,
+#           mar = c(0,0,2,2) + 0.1,
+#           mgp = c(2, 1, 0))
+# 
+# s <- round(seq(1,tmax-1,length.out=4))
+# for (i in 1:4) {
+#   time.stamp <- s[i]
+#   istar.node <- do.call(cbind,lapply(istar.nr,function(x){x[,time.stamp]}))
+#   #Eliminate the <xc rows
+#   istar.node <- istar.node[-seq(1,xc-1,1),]
+#   filled_contour(seq(xc, cons.bs, length.out = nrow(istar.node)), 
+#                  res.bs, 
+#                  istar.node,
+#                  levels = seq(1, max(istar.node)),col = col,
+#                  lwd = 0.1,xlab="Energetic Reserves",ylab="Resource Size")
+# }
+# par(op)
+# 
+# # Has the simulation reached a steady state?
+# D12 <- numeric(tmax-1)
+# for (t in 1:(tmax-2)) {
+#   D1 <- do.call(cbind,lapply(istar.nr,function(x){x[,t]}))
+#   D2 <- do.call(cbind,lapply(istar.nr,function(x){x[,t+1]}))
+#   D12[t] <- sqrt(sum((D1 - D2)^2))
+# }
+# plot(D12,type="l",ylab="Matrix Diff (t[y] - t[y-1])",xlab="t")
+#####
 
-op <- par(mfrow = c(2,2),
-          oma = c(6,6,0,0) + 0.1,
-          mar = c(0,0,2,2) + 0.1,
-          mgp = c(2, 1, 0))
-
-s <- round(seq(1,tmax-1,length.out=4))
-for (i in 1:4) {
-  time.stamp <- s[i]
-  istar.node <- do.call(cbind,lapply(istar.nr,function(x){x[,time.stamp]}))
-  #Eliminate the <xc rows
-  istar.node <- istar.node[-seq(1,xc-1,1),]
-  filled_contour(seq(xc, cons.bs, length.out = nrow(istar.node)), 
-                 res.bs, 
-                 istar.node,
-                 levels = seq(1, max(istar.node)),col = col,
-                 lwd = 0.1,xlab="Energetic Reserves",ylab="Resource Size")
+#Analysis of Decision matrices
+#Ontogenetic analysis
+col.disc <- brewer.pal(5,"Spectral")
+dec.dist.list <- list()
+for (j in 1:5) {
+  dec.dist <- list()
+  for (i in 1:(tmax-1)) {
+    istar.node <- do.call(cbind,lapply(istar.nr[[j]],function(x){x[,i]}))
+    dec.numeric <- as.numeric(istar.node)
+    dec.dist[[i]] <- dec.numeric[which(dec.numeric != 0)]
+  }
+  dec.dist.list[[j]] <- dec.dist
 }
-par(op)
-
-# Has the simulation reached a steady state?
-D12 <- numeric(tmax-1)
-for (t in 1:(tmax-2)) {
-  D1 <- do.call(cbind,lapply(istar.nr,function(x){x[,t]}))
-  D2 <- do.call(cbind,lapply(istar.nr,function(x){x[,t+1]}))
-  D12[t] <- sqrt(sum((D1 - D2)^2))
-}
-plot(D12,type="l",ylab="Matrix Diff (t[y] - t[y-1])",xlab="t")
-
-
-
-
+plot(unlist(lapply(dec.dist.list[[1]],mean)),type="l",lwd=3,col=colors[1])
+for (j in 2:5) {
+  lines(unlist(lapply(dec.dist.list[[j]],mean)),type="l",lwd=3,col=colors[j])
+} 
 
 #####
 #Starting values
 N <- 20 #starting Num. of individuals
-tsim <- 1000 #Simulation time
+tsim <- 10000 #Simulation time
 r.alpha <- 2 #Recruit density-independent growth rate
-r.beta <- 1/80 #Recruit density-dependent growth rate
-r.comp <- 1 #degree of compensation
+r.beta <- 1/100 #Recruit density-dependent growth rate
+r.comp <- 0.6 #degree of compensation
 
 cout.foreq <- SDP_single_foreq(
   tmax = tmax, 
@@ -154,10 +176,10 @@ plot(log(res.bs,10),trophic.prop,pch=16,
 
 #Plot fitness
 plot(fit.mean,type="l")
-plot(fit.mean[burnin:tsim],pop.traj[burnin:tsim],pch='.',cex=3,col="darkgray")
-#This is negative bc higher population sizes are due to accumulated older individuals
+plot(fit.mean[burnin:tsim],pop.traj[burnin:tsim],pch='.',cex=5,col="darkgray")
+#This is slightly negative bc higher population sizes are due to accumulated older individuals
 #and older individuals have lower fitness values ::
-plot(t.mean[burnin:tsim],fit.mean[burnin:tsim],pch='.',cex=3,col="darkgray")
+plot(t.mean[burnin:tsim],fit.mean[burnin:tsim],pch='.',cex=5,col="darkgray")
 
 
 
