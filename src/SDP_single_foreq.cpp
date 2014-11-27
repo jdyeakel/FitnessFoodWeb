@@ -7,6 +7,7 @@ NumericMatrix f_m, NumericVector mort, List dec_ls, NumericVector rho_vec, Numer
 NumericVector g_forage, NumericVector c_forage, List W_nr, List istar_nr, int N_init, int tsim, 
 double alpha, double beta, double comp) {
    
+   
    //Note:
    //Here, state variables are in standard format
    double xc_state = (double) xc; //state
@@ -27,6 +28,7 @@ double alpha, double beta, double comp) {
    
    //Vectors for output
    IntegerVector pop_size(tsim);
+   IntegerVector recruit_size(tsim);
    //OTHERS
    
    //Number of starting individuals
@@ -77,6 +79,7 @@ double alpha, double beta, double comp) {
    //TO EXPORT
    //Record initial pop size
    pop_size(0) = num_alive;
+   recruit_size(0) = 0;
    
    List trophic_int(tsim);
    List energetic_state(tsim);
@@ -95,6 +98,9 @@ double alpha, double beta, double comp) {
      ind_fit(i) = W_matrix(state_v(i)-1,time_v(i)-1);
    }
    fitness(0) = ind_fit;
+   
+   Rcpp::Rcout << "I got here " << num_alive << std::endl;
+   
    
    //Begin time iteration (this is the simulation time)
    //Sim time iterations stop at tsim - 1
@@ -127,8 +133,7 @@ double alpha, double beta, double comp) {
      
      //Begin Individual iterations... Note: N will change with each t
      for (int n=0; n<N; n++) {
-       
-       
+
        
        //Rcpp::Rcout << "N = " << n << std::endl;
        
@@ -301,6 +306,8 @@ double alpha, double beta, double comp) {
       
      } //end individual iterations
      
+     
+     
      num_alive = sum(alive);
      
      //Density-dependent Reproduction :: TODO
@@ -397,6 +404,7 @@ double alpha, double beta, double comp) {
      //Save variables
      pop_size(t+1) = num_alive;
      
+     recruit_size(t+1) = num_recruits;
      
    } //end simulation time iterations
    
