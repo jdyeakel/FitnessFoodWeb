@@ -21,7 +21,7 @@ istar.nr.list <- list()
 cout.foreq <- list()
 num.its <- 10
 land.hetero <- seq(0,1,length.out=num.its)
-for (j in 4:num.its) {
+for (j in 1:num.its) {
   print(paste("j=",j,sep=""))
   #Initial Conditions
   Rout <- SDP_initialcond(
@@ -217,6 +217,7 @@ t.traj <- list(); t.mean <- list()
 d.traj <- list(); d.mean <- list()
 trophic.traj <- list(); trophic.mean <- list()
 fitness <- list(); fit.mean <- list()
+recruits <- list(); recruit.mean <- list()
 for (j in 1:num.its) {
   burnin <- 1000
   pop.traj[[j]] <- cout.foreq[[j]][[1]]
@@ -228,7 +229,7 @@ for (j in 1:num.its) {
   #Trophic ID varies between 0 and num.res-1 bc they are Cpp indices
   trophic.traj[[j]] <- cout.foreq[[j]][[5]]; trophic.mean[[j]] <- unlist(lapply(trophic.traj[[j]],median))
   fitness[[j]] <- cout.foreq[[j]][[6]]; fit.mean[[j]] <- unlist(lapply(fitness[[j]],median))
-
+  recruits[[j]] <- cout.foreq[[j]][[7]]; #recruit.mean[[j]] <- unlist(lapply(recruits[[j]],median))
   
   #proportional trophic interactions
   trophic.v <- unlist(trophic.traj[[j]][burnin:tsim])

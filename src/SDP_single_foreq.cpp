@@ -408,13 +408,14 @@ double alpha, double beta, double comp) {
      
    } //end simulation time iterations
    
-   List output(6);
+   List output(7);
    output(0) = pop_size;
    output(1) = energetic_state;
    output(2) = temporal_state;
    output(3) = decision_state;
    output(4) = trophic_int;
    output(5) = fitness;
+   output(6) = recruit_size;
    //output(1) = ;
    
    return output;
